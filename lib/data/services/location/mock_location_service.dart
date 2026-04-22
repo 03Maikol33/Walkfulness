@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:walkfulness/data/services/location/location_service_base.dart';
 
@@ -21,8 +23,17 @@ class MockLocationService implements LocationServiceBase {
       while (true) {
         await Future.delayed(const Duration(seconds: 2));
         // Simuliamo un piccolo spostamento verso nord-est
-        _currentLat += 0.0001;
-        _currentLng += 0.0001;
+        if (Random().nextInt(10) <= 5) {
+          // ogni tanto facciamo un salto più grande per simulare deviazioni
+          _currentLat += 0.0001;
+        } else {
+          _currentLat -= 0.0001;
+        }
+        if (Random().nextInt(10) <= 5) {
+          _currentLng += 0.0001;
+        } else {
+          _currentLng -= 0.0001;
+        }
         yield GeoPoint(_currentLat, _currentLng);
       }
     }

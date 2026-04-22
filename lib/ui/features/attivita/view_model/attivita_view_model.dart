@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:walkfulness/data/services/location/location_utils.dart';
+import 'package:walkfulness/ui/core/providers/user_provider.dart';
 import '../../../../data/services/location/mock_location_service.dart';
 import '../../../../data/repositories/activity_repository.dart';
 import '../../../../domain/models/activity_model.dart';
@@ -47,7 +48,7 @@ class AttivitaViewModel extends ChangeNotifier {
     });
   }
 
-  Future<void> fermaESalva() async {
+  Future<void> fermaESalva(UserProvider userProvider) async {
     inCorso = false;
     _timer?.cancel();
     _locationSubscription?.cancel();
@@ -63,6 +64,7 @@ class AttivitaViewModel extends ChangeNotifier {
       );
 
       await _activityRepository.salvaAttivita(nuovaAttivita);
+      await userProvider.caricaUtente(forceRefresh: true); // Ricarica i dati dell'utente per aggiornare km percorsi e livello
     }
     notifyListeners();
   }

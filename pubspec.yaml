@@ -31,6 +31,8 @@ dependencies:
   flutter:
     sdk: flutter
   provider: ^6.1.1
+  flutter_map: ^6.1.0      # motore della mappa
+  latlong2: ^0.9.0         #  gestire le coordinate LatLng
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
@@ -71,6 +73,7 @@ flutter:
     - assets/images/iniziativa_default.jpg
     - assets/images/default_profile_pic.png
     - assets/images/logo_decorated.png
+    - assets/images/forest_bg.png
 
     - assets/data/frasi.json
 
