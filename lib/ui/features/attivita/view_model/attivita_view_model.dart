@@ -1,0 +1,69 @@
+import 'dart:async';
+import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:walkfulness/data/services/location/location_utils.dart';
+import '../../../../data/services/location/mock_location_service.dart';
+import '../../../../data/repositories/activity_repository.dart';
+import '../../../../domain/models/activity_model.dart';
+
+class AttivitaViewModel extends ChangeNotifier {
+  final MockLocationService _locationService = MockLocationService();
+  final ActivityRepository _activityRepository = ActivityRepository();
+
+  // Stato dell'attività
+  bool inCorso = false;
+  double kmPercorsi = 0.0;
+  Duration durata = Duration.zero;
+  List<GeoPoint> tracciaGps = [];
+
+  Timer? _timer;
+  StreamSubscription<GeoPoint>? _locationSubscription;
+
+  void avviaAttivita() {
+    inCorso = true;
+    _inizioCronometro();
+    _ascoltaPosizione();
+    notifyListeners();
+  }
+
+  void _inizioCronometro() {
+    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      durata += const Duration(seconds: 1);
+      notifyListeners();
+    });
+  }
+
+  void _ascoltaPosizione() {
+    _locationSubscription = _locationService.positionStream.listen((punto) {
+      if(tracciaGps.isNotEmpty){
+        //calcola la distanza tra l'ultimo punto e il nuovo punto
+        final ultimoPunto = tracciaGps.last;
+        final distanza = LocationUtils.calcolaDistanza(ultimoPunto, punto);
+        kmPercorsi += distanza;
+      }
+      tracciaGps.add(punto);
+      notifyListeners();
+    });
+  }
+
+  Future<void> fermaESalva() async {
+    inCorso = false;
+    _timer?.cancel();
+    _locationSubscription?.cancel();
+
+    final user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      final nuovaAttivita = ActivityModel(
+        userId: user.uid,
+        km: kmPercorsi,
+        data: DateTime.now(),
+        durata: durata,
+        percorso: tracciaGps,
+      );
+
+      await _activityRepository.salvaAttivita(nuovaAttivita);
+    }
+    notifyListeners();
+  }
+}

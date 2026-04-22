@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "248564350133",
+    "project_id": "walkfulness-5d103",
+    "storage_bucket": "walkfulness-5d103.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:248564350133:android:548b4d5a40ab90faf612fc",
+        "android_client_info": {
+          "package_name": "com.example.walkfulness"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBEJXETWKr7iSIk9dh6Ijd0gNAtDRqb_GY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

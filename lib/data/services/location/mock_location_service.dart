@@ -1,0 +1,30 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:walkfulness/data/services/location/location_service_base.dart';
+
+class MockLocationService implements LocationServiceBase {
+  List<GeoPoint>? _percorsoDaSeguire;
+  double _currentLat = 42.358246; // Latitudine di partenza (es. Milano)
+  double _currentLng = 13.386197; // Longitudine di partenza
+
+  // Metodo per caricare un percorso (es. quello generato dall'AI)
+  void setPercorso(List<GeoPoint> percorso) => _percorsoDaSeguire = percorso;
+
+  @override
+  Stream<GeoPoint> get positionStream async* {
+    if (_percorsoDaSeguire != null) {
+      // Segue il percorso predefinito punto per punto
+      for (var punto in _percorsoDaSeguire!) {
+        await Future.delayed(const Duration(seconds: 2));
+        yield punto;
+      }
+    } else {
+      while (true) {
+        await Future.delayed(const Duration(seconds: 2));
+        // Simuliamo un piccolo spostamento verso nord-est
+        _currentLat += 0.0001;
+        _currentLng += 0.0001;
+        yield GeoPoint(_currentLat, _currentLng);
+      }
+    }
+  }
+}
