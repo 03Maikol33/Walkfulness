@@ -18,10 +18,39 @@ class AttivitaView extends StatefulWidget {
 class _AttivitaViewState extends State<AttivitaView> {
   final _viewModel = AttivitaViewModel();
 
+  //controller della mappa
+  final _mapController = MapController();
+  int _puntiTracciati = 0;
+
   @override
   void initState() {
     super.initState();
-    _viewModel.avviaAttivita(); //
+    _viewModel.avviaAttivita();
+
+    //aggiunge un listener al view model
+    //quando il view model riceve nuovi dati sulla posizione, centra la mappa su quella posizione
+    _viewModel.addListener(_centraMappa);
+  }
+
+  void _centraMappa() {
+    //Sposta la mappa SOLO se la lista dei punti GPS è aumentata
+    if (_viewModel.tracciaGps.length > _puntiTracciati) {
+      _puntiTracciati = _viewModel.tracciaGps.length;
+      final ultimoPunto = _viewModel.tracciaGps.last;
+
+      //spostare la mappa
+      _mapController.move(
+        LatLng(ultimoPunto.latitude, ultimoPunto.longitude),
+        16.0, // Manteniamo uno zoom ravvicinato
+      );
+    }
+  }
+
+  @override
+  void dispose() {
+    _viewModel.removeListener(_centraMappa);
+    _mapController.dispose();
+    super.dispose();
   }
 
   @override
@@ -34,34 +63,20 @@ class _AttivitaViewState extends State<AttivitaView> {
         builder: (context, _) {
           return Stack(
             children: [
-              //SFONDO foresta sfocata)
-              Positioned.fill(
-                child: Image.asset(
-                  'assets/images/forest_bg.png',
-                  fit: BoxFit.cover,
-                ),
-              ),
-              Positioned.fill(
-                child: BackdropFilter(
-                  filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
-                  child: Container(color: Colors.white.withOpacity(0.2)),
-                ),
-              ),
-
-              // 2. CONTENUTO
               SafeArea(
                 child: SingleChildScrollView(
                   child: Column(
                     children: [
                       const SizedBox(height: 50),
                       _buildMainStats(theme),
-                      const SizedBox(height: 30),
+                      _buildDebugToggle(),
+                      const SizedBox(height: 10),
                       _buildMapCard(theme),
-                      const SizedBox(height: 30),
+                      const SizedBox(height: 10),
                       _buildLandmarkCard(theme),
-                      const SizedBox(height: 12),
+                      const SizedBox(height: 10),
                       _buildPlayerCard(theme),
-                      const SizedBox(height: 30),
+                      const SizedBox(height: 10),
                       _buildTerminateButton(context, theme),
                       const SizedBox(height: 20),
                     ],
@@ -87,6 +102,7 @@ class _AttivitaViewState extends State<AttivitaView> {
       ),
       clipBehavior: Clip.antiAlias,
       child: FlutterMap(
+        mapController: _mapController,
         options: MapOptions(
           initialCenter: _viewModel.tracciaGps.isNotEmpty
               ? LatLng(
@@ -94,13 +110,15 @@ class _AttivitaViewState extends State<AttivitaView> {
                   _viewModel.tracciaGps.last.longitude,
                 )
               : const LatLng(42.358246, 13.386197),
-          initialZoom: 15.0,
+          initialZoom: 16.0,
         ),
         children: [
           TileLayer(
+            //urlTemplate: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
             urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
             userAgentPackageName: 'com.example.walkfulness',
           ),
+          //crea la traccia che si aggiorna in tempo reale con i punti raccolti
           PolylineLayer(
             polylines: [
               Polyline(
@@ -108,8 +126,37 @@ class _AttivitaViewState extends State<AttivitaView> {
                     .map((p) => LatLng(p.latitude, p.longitude))
                     .toList(),
                 color: theme.colorScheme.primary,
-                strokeWidth: 4,
+                strokeWidth: 8,
               ),
+            ],
+          ),
+
+          MarkerLayer(
+            markers: [
+              // Mostriamo il pallino solo se abbiamo almeno una coordinata
+              if (_viewModel.tracciaGps.isNotEmpty)
+                Marker(
+                  point: LatLng(
+                    _viewModel.tracciaGps.last.latitude,
+                    _viewModel.tracciaGps.last.longitude,
+                  ),
+                  width: 24,
+                  height: 24,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.blue, // Azzurro classico dei GPS
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.white, width: 3),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.3),
+                          blurRadius: 4,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
             ],
           ),
         ],
@@ -123,12 +170,12 @@ class _AttivitaViewState extends State<AttivitaView> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             "SESSIONE IN CORSO",
             style: TextStyle(
               letterSpacing: 1.5,
               fontSize: 12,
-              color: Color.fromARGB(255, 255, 255, 255),
+              color: theme.colorScheme.primary,
             ),
           ),
           Row(
@@ -136,11 +183,11 @@ class _AttivitaViewState extends State<AttivitaView> {
             textBaseline: TextBaseline.alphabetic,
             children: [
               Text(
-                "${_viewModel.durata.inMinutes}", //
+                "${_viewModel.durata.inMinutes.remainder(60).toString().padLeft(2, '0')}:${_viewModel.durata.inSeconds.remainder(60).toString().padLeft(2, '0')}",
                 style: GoogleFonts.notoSerif(
                   fontSize: 64,
                   fontWeight: FontWeight.bold,
-                  color: Color.fromARGB(255, 255, 255, 255),
+                  color: theme.colorScheme.primary,
                 ),
               ),
               const SizedBox(width: 4),
@@ -148,24 +195,24 @@ class _AttivitaViewState extends State<AttivitaView> {
                 "min",
                 style: GoogleFonts.notoSerif(
                   fontSize: 24,
-                  color: Color.fromARGB(255, 255, 255, 255),
+                  color: theme.colorScheme.primary,
                 ),
               ),
-            ],
-          ),
-          Row(
-            children: [
-              const Icon(
-                Icons.location_on,
-                size: 16,
-                color: Color.fromARGB(255, 255, 255, 255),
+              const SizedBox(width: 24),
+              Text(
+                "${_viewModel.kmPercorsi.toStringAsFixed(1)}",
+                style: GoogleFonts.notoSerif(
+                  fontSize: 64,
+                  fontWeight: FontWeight.bold,
+                  color: theme.colorScheme.primary,
+                ),
               ),
               const SizedBox(width: 4),
               Text(
-                "${_viewModel.kmPercorsi.toStringAsFixed(1)} km", //
-                style: const TextStyle(
-                  fontSize: 16,
-                  color: Color.fromARGB(255, 255, 255, 255),
+                "km",
+                style: GoogleFonts.notoSerif(
+                  fontSize: 24,
+                  color: theme.colorScheme.primary,
                 ),
               ),
             ],
@@ -269,15 +316,7 @@ class _AttivitaViewState extends State<AttivitaView> {
       width: 250,
       height: 60,
       child: ElevatedButton.icon(
-        onPressed: () async {
-          final userProvider = Provider.of<UserProvider>(
-            context,
-            listen: false,
-          );
-
-          await _viewModel.fermaESalva(userProvider);
-          if (mounted) Navigator.pop(context);
-        },
+        onPressed: () => _mostraConfirmTermina(context),
         icon: const Icon(Icons.stop_circle_outlined, color: Colors.black87),
         label: const Text(
           "Termina Sessione",
@@ -288,6 +327,70 @@ class _AttivitaViewState extends State<AttivitaView> {
           shape: const StadiumBorder(),
           elevation: 0,
         ),
+      ),
+    );
+  }
+
+  void _mostraConfirmTermina(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        return AlertDialog(
+          title: const Text("Terminare l'attività?"),
+          content: const Text(
+            "Sei sicuro di voler terminare l'attività corrente?",
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: const Text("Annulla"),
+            ),
+            TextButton(
+              onPressed: () async {
+                Navigator.pop(dialogContext);
+                final userProvider = Provider.of<UserProvider>(
+                  context,
+                  listen: false,
+                );
+                //salva i dati
+                await _viewModel.fermaESalva(userProvider);
+                if (mounted) {
+                  Navigator.pop(context);
+                }
+              },
+              child: const Text("Termina", style: TextStyle(color: Colors.red)),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildDebugToggle() {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 24),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      decoration: BoxDecoration(
+        color: Colors.amber.shade100,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.amber, width: 2),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          const Text(
+            "DEBUG: GPS Simulato",
+            style: TextStyle(fontWeight: FontWeight.bold, color: Colors.brown),
+          ),
+          Switch(
+            value: _viewModel.usaGpsSimulato,
+            onChanged: (val) {
+              // Cambia il motore GPS al volo
+              _viewModel.cambiaSorgenteGps(val);
+            },
+            activeColor: Colors.amber.shade800,
+          ),
+        ],
       ),
     );
   }

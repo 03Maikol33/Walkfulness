@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 abstract class LocationServiceBase {
   Stream<GeoPoint> get positionStream;
+  Future<void> inizializza();
 }
 
 //classe astratta per generalizzare un servizio di localizzazione

@@ -12,6 +12,11 @@ class MockLocationService implements LocationServiceBase {
   void setPercorso(List<GeoPoint> percorso) => _percorsoDaSeguire = percorso;
 
   @override
+  Future<void> inizializza() async {
+    return;
+  }
+
+  @override
   Stream<GeoPoint> get positionStream async* {
     if (_percorsoDaSeguire != null) {
       // Segue il percorso predefinito punto per punto
