@@ -33,6 +33,10 @@ class _AttivitaViewState extends State<AttivitaView> {
   }
 
   void _centraMappa() {
+    if (_viewModel.tracciaGps.length < _puntiTracciati) {
+      _puntiTracciati = 0;
+    }
+
     //Sposta la mappa SOLO se la lista dei punti GPS è aumentata
     if (_viewModel.tracciaGps.length > _puntiTracciati) {
       _puntiTracciati = _viewModel.tracciaGps.length;
@@ -70,6 +74,7 @@ class _AttivitaViewState extends State<AttivitaView> {
                       const SizedBox(height: 50),
                       _buildMainStats(theme),
                       _buildDebugToggle(),
+                      _buildAudioTogglesCard(theme),
                       const SizedBox(height: 10),
                       _buildMapCard(theme),
                       const SizedBox(height: 10),
@@ -144,7 +149,7 @@ class _AttivitaViewState extends State<AttivitaView> {
                   height: 24,
                   child: Container(
                     decoration: BoxDecoration(
-                      color: Colors.blue, // Azzurro classico dei GPS
+                      color: theme.colorScheme.primary,
                       shape: BoxShape.circle,
                       border: Border.all(color: Colors.white, width: 3),
                       boxShadow: [
@@ -178,51 +183,115 @@ class _AttivitaViewState extends State<AttivitaView> {
               color: theme.colorScheme.primary,
             ),
           ),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.baseline,
-            textBaseline: TextBaseline.alphabetic,
-            children: [
-              Text(
-                "${_viewModel.durata.inMinutes.remainder(60).toString().padLeft(2, '0')}:${_viewModel.durata.inSeconds.remainder(60).toString().padLeft(2, '0')}",
-                style: GoogleFonts.notoSerif(
-                  fontSize: 64,
-                  fontWeight: FontWeight.bold,
-                  color: theme.colorScheme.primary,
+          FittedBox(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.baseline,
+              textBaseline: TextBaseline.alphabetic,
+              children: [
+                Text(
+                  "${_viewModel.durata.inMinutes.remainder(60).toString().padLeft(2, '0')}:${_viewModel.durata.inSeconds.remainder(60).toString().padLeft(2, '0')}",
+                  style: GoogleFonts.notoSerif(
+                    fontSize: 64,
+                    fontWeight: FontWeight.bold,
+                    color: theme.colorScheme.primary,
+                  ),
                 ),
-              ),
-              const SizedBox(width: 4),
-              Text(
-                "min",
-                style: GoogleFonts.notoSerif(
-                  fontSize: 24,
-                  color: theme.colorScheme.primary,
+                const SizedBox(width: 4),
+                Text(
+                  "min",
+                  style: GoogleFonts.notoSerif(
+                    fontSize: 24,
+                    color: theme.colorScheme.primary,
+                  ),
                 ),
-              ),
-              const SizedBox(width: 24),
-              Text(
-                "${_viewModel.kmPercorsi.toStringAsFixed(1)}",
-                style: GoogleFonts.notoSerif(
-                  fontSize: 64,
-                  fontWeight: FontWeight.bold,
-                  color: theme.colorScheme.primary,
+                const SizedBox(width: 24),
+                Text(
+                  "${_viewModel.kmPercorsi.toStringAsFixed(1)}",
+                  style: GoogleFonts.notoSerif(
+                    fontSize: 64,
+                    fontWeight: FontWeight.bold,
+                    color: theme.colorScheme.primary,
+                  ),
                 ),
-              ),
-              const SizedBox(width: 4),
-              Text(
-                "km",
-                style: GoogleFonts.notoSerif(
-                  fontSize: 24,
-                  color: theme.colorScheme.primary,
+                const SizedBox(width: 4),
+                Text(
+                  "km",
+                  style: GoogleFonts.notoSerif(
+                    fontSize: 24,
+                    color: theme.colorScheme.primary,
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ],
       ),
     );
   }
 
+  Widget _buildAudioTogglesCard(ThemeData theme) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 24),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.8),
+        borderRadius: BorderRadius.circular(40),
+      ),
+      child: FittedBox(
+        child: Row(
+          children: [
+            TextButton(
+              onPressed: () {
+                _viewModel.toggleGuidaVocale(
+                  !_viewModel.audioGuideService.isAttiva,
+                );
+              },
+              child: Row(
+                children: [
+                  Icon(
+                    _viewModel.audioGuideService.isAttiva
+                        ? Icons.volume_up
+                        : Icons.volume_off,
+                    color: _viewModel.audioGuideService.isAttiva
+                        ? theme.colorScheme.primary
+                        : Colors.grey,
+                  ),
+                  const SizedBox(width: 8),
+                  const Text("Guida Vocale"),
+                ],
+              ),
+            ),
+            TextButton(
+              onPressed: () {
+                //_viewModel.toggleSuoniAmbientali(
+                //  !_viewModel.suoniAmbientaliService.isAttiva,
+                //);
+              },
+              child: Row(
+                children: [
+                  Icon(
+                    _viewModel.audioGuideService.isAttiva
+                        ? Icons.spatial_audio
+                        : Icons.spatial_audio_off,
+                    color: _viewModel.audioGuideService.isAttiva
+                        ? theme.colorScheme.primary
+                        : Colors.grey,
+                  ),
+                  const SizedBox(width: 8),
+                  const Text("Suoni Ambientali"),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildLandmarkCard(ThemeData theme) {
+    //se non c'è ancora nessun POI non viene mostrata la cart
+    if (_viewModel.luogoVicinoAttuale == null) return const SizedBox.shrink();
+
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 24),
       padding: const EdgeInsets.all(20),
@@ -234,22 +303,24 @@ class _AttivitaViewState extends State<AttivitaView> {
         children: [
           CircleAvatar(
             backgroundColor: const Color(0xFFC7EBEB),
-            child: Icon(Icons.eco, color: theme.colorScheme.primary),
+            child: Icon(Icons.place, color: theme.colorScheme.primary),
           ),
           const SizedBox(width: 16),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const Text(
-                "TI STAI AVVICINANDO A",
+                "SEI NEI PRESSI DI",
                 style: TextStyle(fontSize: 10, color: Colors.black54),
               ),
-              Text(
-                "La Radura delle Campanule",
-                style: GoogleFonts.notoSerif(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: theme.colorScheme.primary,
+              FittedBox(
+                child: Text(
+                  _viewModel.luogoVicinoAttuale!,
+                  style: GoogleFonts.notoSerif(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: theme.colorScheme.primary,
+                  ),
                 ),
               ),
             ],
@@ -270,7 +341,7 @@ class _AttivitaViewState extends State<AttivitaView> {
       child: Column(
         children: [
           const Text(
-            "GUIDA ATTUALE",
+            "AUDIO ATTUALE",
             style: TextStyle(fontSize: 10, color: Colors.black54),
           ),
           const SizedBox(height: 8),

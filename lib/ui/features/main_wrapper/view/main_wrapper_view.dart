@@ -31,7 +31,12 @@ class _MainWrapperViewState extends State<MainWrapperView> {
       listenable: _viewModel,
       builder: (context, child) {
         return Scaffold(
-          appBar: AppBar(title: const Text('Walkfulness'), centerTitle: false),
+          appBar: AppBar(
+            title:
+                //const Text('Walkfulness')
+                Image.asset('assets/images/logo_decorated.png', height: 40),
+            centerTitle: false,
+          ),
           body: IndexedStack(index: _viewModel.currentIndex, children: _pages),
 
           bottomNavigationBar: NavigationBar(

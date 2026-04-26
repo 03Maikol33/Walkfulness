@@ -7,9 +7,11 @@ import 'ui/core/providers/user_provider.dart';
 import 'ui/core/theme/app_theme.dart';
 import 'ui/features/main_wrapper/view/main_wrapper_view.dart';
 import 'ui/features/login/view/login_view.dart';
+import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  FlutterForegroundTask.initCommunicationPort();
   await Firebase.initializeApp();
 
   runApp(
