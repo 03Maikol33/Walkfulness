@@ -16,14 +16,15 @@ class AttivitaViewModel extends ChangeNotifier {
   //final LocationService _locationService = LocationService();
   //final MockLocationService _locationService = MockLocationService();
   LocationServiceBase _locationService =
-      MockLocationService(); // Inizialmente usa il mock
+      LocationService(); //utilizza la posizione reale
+  //MockLocationService(); // Inizialmente usa il mock
   final PoiService _poiService =
       PoiService(); // Per trovare luoghi di interesse
   final AudioGuideService audioGuideService =
       AudioGuideService(); // Per la guida audio
   final ActivityRepository _activityRepository = ActivityRepository();
 
-  bool usaGpsSimulato = true;
+  bool usaGpsSimulato = false; //inizia con il GPS reale.
   // Stato dell'attività
   bool inCorso = false;
   double kmPercorsi = 0.0;
@@ -57,7 +58,7 @@ class AttivitaViewModel extends ChangeNotifier {
     // INIEZIONE DEL PERCORSO DI TEST
     if (usaMock) {
       final mock = MockLocationService();
-      mock.impostaPercorsoAlbaAdriatica(); // Carichiamo il percorso forzato!
+      mock.impostaPercorsoAlbaAdriatica(); // carica il percorso forzato
       _locationService = mock;
     } else {
       _locationService = LocationService();
