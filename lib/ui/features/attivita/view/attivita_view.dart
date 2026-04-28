@@ -1,4 +1,3 @@
-// lib/ui/features/attivita/view/attivita_in_corso_view.dart
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
@@ -18,7 +17,6 @@ class AttivitaView extends StatefulWidget {
 class _AttivitaViewState extends State<AttivitaView> {
   final _viewModel = AttivitaViewModel();
 
-  //controller della mappa
   final _mapController = MapController();
   int _puntiTracciati = 0;
 
@@ -26,9 +24,6 @@ class _AttivitaViewState extends State<AttivitaView> {
   void initState() {
     super.initState();
     _viewModel.avviaAttivita();
-
-    //aggiunge un listener al view model
-    //quando il view model riceve nuovi dati sulla posizione, centra la mappa su quella posizione
     _viewModel.addListener(_centraMappa);
   }
 
@@ -37,15 +32,13 @@ class _AttivitaViewState extends State<AttivitaView> {
       _puntiTracciati = 0;
     }
 
-    //Sposta la mappa SOLO se la lista dei punti GPS è aumentata
     if (_viewModel.tracciaGps.length > _puntiTracciati) {
       _puntiTracciati = _viewModel.tracciaGps.length;
       final ultimoPunto = _viewModel.tracciaGps.last;
 
-      //spostare la mappa
       _mapController.move(
         LatLng(ultimoPunto.latitude, ultimoPunto.longitude),
-        16.0, // Manteniamo uno zoom ravvicinato
+        16.0,
       );
     }
   }
@@ -80,7 +73,7 @@ class _AttivitaViewState extends State<AttivitaView> {
                       const SizedBox(height: 10),
                       _buildLandmarkCard(theme),
                       const SizedBox(height: 10),
-                      _buildPlayerCard(theme),
+                      _buildPlayerCard(theme), // <-- Ora è interattivo!
                       const SizedBox(height: 10),
                       _buildTerminateButton(context, theme),
                       const SizedBox(height: 20),
@@ -119,11 +112,9 @@ class _AttivitaViewState extends State<AttivitaView> {
         ),
         children: [
           TileLayer(
-            //urlTemplate: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
             urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
             userAgentPackageName: 'com.example.walkfulness',
           ),
-          //crea la traccia che si aggiorna in tempo reale con i punti raccolti
           PolylineLayer(
             polylines: [
               Polyline(
@@ -135,10 +126,8 @@ class _AttivitaViewState extends State<AttivitaView> {
               ),
             ],
           ),
-
           MarkerLayer(
             markers: [
-              // Mostriamo il pallino solo se abbiamo almeno una coordinata
               if (_viewModel.tracciaGps.isNotEmpty)
                 Marker(
                   point: LatLng(
@@ -206,7 +195,7 @@ class _AttivitaViewState extends State<AttivitaView> {
                 ),
                 const SizedBox(width: 24),
                 Text(
-                  "${_viewModel.kmPercorsi.toStringAsFixed(1)}",
+                  _viewModel.kmPercorsi.toStringAsFixed(1),
                   style: GoogleFonts.notoSerif(
                     fontSize: 64,
                     fontWeight: FontWeight.bold,
@@ -242,17 +231,16 @@ class _AttivitaViewState extends State<AttivitaView> {
           children: [
             TextButton(
               onPressed: () {
-                _viewModel.toggleGuidaVocale(
-                  !_viewModel.audioGuideService.isAttiva,
-                );
+                // Utilizza la nuova variabile di stato nel ViewModel
+                _viewModel.toggleGuidaVocale(!_viewModel.isVoceAttiva);
               },
               child: Row(
                 children: [
                   Icon(
-                    _viewModel.audioGuideService.isAttiva
+                    _viewModel.isVoceAttiva
                         ? Icons.volume_up
                         : Icons.volume_off,
-                    color: _viewModel.audioGuideService.isAttiva
+                    color: _viewModel.isVoceAttiva
                         ? theme.colorScheme.primary
                         : Colors.grey,
                   ),
@@ -263,17 +251,16 @@ class _AttivitaViewState extends State<AttivitaView> {
             ),
             TextButton(
               onPressed: () {
-                //_viewModel.toggleSuoniAmbientali(
-                //  !_viewModel.suoniAmbientaliService.isAttiva,
-                //);
+                // Accende e spegne il layer 1 (Ambiente)
+                _viewModel.toggleSuoniAmbientali();
               },
               child: Row(
                 children: [
                   Icon(
-                    _viewModel.audioGuideService.isAttiva
+                    _viewModel.isAmbienteAttivo
                         ? Icons.spatial_audio
                         : Icons.spatial_audio_off,
-                    color: _viewModel.audioGuideService.isAttiva
+                    color: _viewModel.isAmbienteAttivo
                         ? theme.colorScheme.primary
                         : Colors.grey,
                   ),
@@ -289,7 +276,6 @@ class _AttivitaViewState extends State<AttivitaView> {
   }
 
   Widget _buildLandmarkCard(ThemeData theme) {
-    //se non c'è ancora nessun POI non viene mostrata la cart
     if (_viewModel.luogoVicinoAttuale == null) return const SizedBox.shrink();
 
     return Container(
@@ -306,24 +292,25 @@ class _AttivitaViewState extends State<AttivitaView> {
             child: Icon(Icons.place, color: theme.colorScheme.primary),
           ),
           const SizedBox(width: 16),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                "SEI NEI PRESSI DI",
-                style: TextStyle(fontSize: 10, color: Colors.black54),
-              ),
-              FittedBox(
-                child: Text(
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  "SEI NEI PRESSI DI",
+                  style: TextStyle(fontSize: 10, color: Colors.black54),
+                ),
+                Text(
                   _viewModel.luogoVicinoAttuale!,
                   style: GoogleFonts.notoSerif(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
                     color: theme.colorScheme.primary,
                   ),
+                  overflow: TextOverflow.ellipsis,
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ],
       ),
@@ -341,12 +328,12 @@ class _AttivitaViewState extends State<AttivitaView> {
       child: Column(
         children: [
           const Text(
-            "AUDIO ATTUALE",
+            "AUDIO AMBIENTALE",
             style: TextStyle(fontSize: 10, color: Colors.black54),
           ),
           const SizedBox(height: 8),
           Text(
-            "Sussurri della Foresta: Resilienza",
+            "Sussurri della Foresta",
             textAlign: TextAlign.center,
             style: GoogleFonts.notoSerif(
               fontSize: 20,
@@ -358,16 +345,28 @@ class _AttivitaViewState extends State<AttivitaView> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
-              const Icon(Icons.skip_previous),
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.primary,
-                  shape: BoxShape.circle,
+              const Icon(Icons.skip_previous, color: Colors.grey),
+              // Tasto Play/Pausa reso interattivo
+              GestureDetector(
+                onTap: () {
+                  _viewModel.toggleSuoniAmbientali();
+                },
+                child: Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.primary,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    _viewModel.isAmbienteAttivo
+                        ? Icons.pause
+                        : Icons.play_arrow,
+                    color: Colors.white,
+                    size: 32,
+                  ),
                 ),
-                child: const Icon(Icons.pause, color: Colors.white, size: 32),
               ),
-              const Icon(Icons.replay),
+              const Icon(Icons.skip_next, color: Colors.grey),
             ],
           ),
           const SizedBox(height: 20),
@@ -423,7 +422,6 @@ class _AttivitaViewState extends State<AttivitaView> {
                   context,
                   listen: false,
                 );
-                //salva i dati
                 await _viewModel.fermaESalva(userProvider);
                 if (mounted) {
                   Navigator.pop(context);
@@ -456,7 +454,6 @@ class _AttivitaViewState extends State<AttivitaView> {
           Switch(
             value: _viewModel.usaGpsSimulato,
             onChanged: (val) {
-              // Cambia il motore GPS al volo
               _viewModel.cambiaSorgenteGps(val);
             },
             activeColor: Colors.amber.shade800,

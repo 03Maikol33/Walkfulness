@@ -2,8 +2,11 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter_tts/flutter_tts.dart';
 import 'package:walkfulness/data/services/POI/poi_service.dart';
-import 'package:walkfulness/data/services/TTS/tts_service.dart';
+import 'package:walkfulness/data/services/audio/audio_manager.dart';
+import 'package:walkfulness/data/services/audio/mindfulness_service.dart';
+import 'package:walkfulness/data/services/audio/tts_service.dart';
 import 'package:walkfulness/data/services/location/location_service.dart';
 import 'package:walkfulness/data/services/location/location_service_base.dart';
 import 'package:walkfulness/data/services/location/location_utils.dart';
@@ -16,7 +19,9 @@ class AttivitaViewModel extends ChangeNotifier {
   LocationServiceBase _locationService =
       LocationService(); // o MockLocationService()
   final PoiService _poiService = PoiService();
-  final AudioGuideService audioGuideService = AudioGuideService();
+  final AudioManager audioManager = AudioManager();
+  final MindfulnessService _mindfulness = MindfulnessService();
+  //final AudioGuideService audioGuideService = AudioGuideService();
   final ActivityRepository _activityRepository = ActivityRepository();
 
   bool usaGpsSimulato = false;
@@ -25,6 +30,9 @@ class AttivitaViewModel extends ChangeNotifier {
   Duration durata = Duration.zero;
   List<GeoPoint> tracciaGps = [];
   String? luogoVicinoAttuale;
+
+  bool isVoceAttiva = true; // Per il toggle della guida vocale
+  bool isAmbienteAttivo = false; // Per il toggle della musica ambientale
 
   // Variabili per Background e Audio
   DateTime? _oraDiInizio;
@@ -66,7 +74,9 @@ class AttivitaViewModel extends ChangeNotifier {
   Future<void> avviaAttivita() async {
     try {
       await _locationService.inizializza();
-      await audioGuideService.inizializza();
+      await audioManager.inizializza();
+      // await audioManager.avviaSottofondoNaturale('audio/foresta.mp3'); //  quando avrò l'MP3
+      await audioManager.parla("Attività avviata. Iniziamo!");
 
       // Se hai il metodo inizializza nel PoiService, chiamalo, altrimenti resettalo.
       try {
@@ -76,7 +86,7 @@ class AttivitaViewModel extends ChangeNotifier {
       inCorso = true;
       _oraDiInizio = DateTime.now(); // Per il conteggio immune al background
 
-      await audioGuideService.parla("Attività avviata. Iniziamo!");
+      //await audioGuideService.parla("Attività avviata. Iniziamo!");
 
       _inizioCronometro();
       _ascoltaPosizione();
@@ -87,7 +97,22 @@ class AttivitaViewModel extends ChangeNotifier {
   }
 
   void toggleGuidaVocale(bool stato) {
-    audioGuideService.impostaStato(stato);
+    isVoceAttiva = stato;
+    audioManager.impostaStatoVoce(stato);
+    notifyListeners();
+  }
+
+  //gestione del player
+  Future<void> toggleSuoniAmbientali() async {
+    isAmbienteAttivo = !isAmbienteAttivo;
+    if (isAmbienteAttivo) {
+      // Quando avrai il file .mp3, lo farai partire qui
+      // await audioManager.avviaSottofondoNaturale('audio/foresta.mp3');
+      print("[AUDIO] Play Sottofondo Naturale");
+    } else {
+      await audioManager.fermaSottofondo();
+      print("[AUDIO] Pausa Sottofondo Naturale");
+    }
     notifyListeners();
   }
 
@@ -129,7 +154,7 @@ class AttivitaViewModel extends ChangeNotifier {
     int kmInteri = kmPercorsi.floor();
     if (kmInteri > _ultimoKmAnnunciato) {
       _ultimoKmAnnunciato = kmInteri;
-      audioGuideService.parla(
+      audioManager.parla(
         "Chilometro $kmInteri completato. Velocità media, ${velocitaAttuale.toStringAsFixed(1)} chilometri orari.",
       );
     }
@@ -139,7 +164,7 @@ class AttivitaViewModel extends ChangeNotifier {
         minutiAttuali % 10 == 0 &&
         minutiAttuali > _ultimoMinutoAnnunciato) {
       _ultimoMinutoAnnunciato = minutiAttuali;
-      audioGuideService.parla(
+      audioManager.parla(
         "Sei in cammino da $minutiAttuali minuti. Hai percorso ${kmPercorsi.toStringAsFixed(1)} chilometri.",
       );
     }
@@ -163,7 +188,8 @@ class AttivitaViewModel extends ChangeNotifier {
 
       if (luogo != null) {
         luogoVicinoAttuale = luogo;
-        await audioGuideService.parla("Sei nei pressi di $luogo.");
+        String frase = await _mindfulness.generaFrasePerPOI(luogo);
+        await audioManager.parla(frase);
         notifyListeners();
       }
     } catch (e) {
@@ -179,7 +205,7 @@ class AttivitaViewModel extends ChangeNotifier {
     await _locationSubscription?.cancel();
 
     await _locationService.ferma();
-    await audioGuideService.ferma();
+    await audioManager.fermaTutto();
 
     final user = FirebaseAuth.instance.currentUser;
     if (user != null) {
