@@ -147,13 +147,13 @@ class LocationService implements LocationServiceBase {
       }
 
       // Estrai la velocità
-      final speedMs = data['speed'] as double ?? 0.0;
+      final speedMs = (data['speed'] as num?)?.toDouble() ?? 0.0;
       print("[MAIN THREAD] 🚀 Velocità ricevuta: $speedMs m/s");
       velocitaCorrente = speedMs * 3.6; // km/h
 
       // Estrai coordinate
-      final lat = data['lat'] as double?;
-      final lng = data['lng'] as double?;
+      final lat = (data['lat'] as num?)?.toDouble();
+      final lng = (data['lng'] as num?)?.toDouble();
 
       if (lat == null || lng == null) {
         print("[MAIN THREAD] ⚠️ Coordinate mancanti: lat=$lat, lng=$lng");

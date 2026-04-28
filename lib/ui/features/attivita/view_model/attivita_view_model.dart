@@ -13,73 +13,68 @@ import '../../../../data/repositories/activity_repository.dart';
 import '../../../../domain/models/activity_model.dart';
 
 class AttivitaViewModel extends ChangeNotifier {
-  //final LocationService _locationService = LocationService();
-  //final MockLocationService _locationService = MockLocationService();
   LocationServiceBase _locationService =
-      LocationService(); //utilizza la posizione reale
-  //MockLocationService(); // Inizialmente usa il mock
-  final PoiService _poiService =
-      PoiService(); // Per trovare luoghi di interesse
-  final AudioGuideService audioGuideService =
-      AudioGuideService(); // Per la guida audio
+      LocationService(); // o MockLocationService()
+  final PoiService _poiService = PoiService();
+  final AudioGuideService audioGuideService = AudioGuideService();
   final ActivityRepository _activityRepository = ActivityRepository();
 
-  bool usaGpsSimulato = false; //inizia con il GPS reale.
-  // Stato dell'attività
+  bool usaGpsSimulato = false;
   bool inCorso = false;
   double kmPercorsi = 0.0;
   Duration durata = Duration.zero;
   List<GeoPoint> tracciaGps = [];
+  String? luogoVicinoAttuale;
 
-  //POI
-  //List<String> luoghiAnnunciati = [];
+  // Variabili per Background e Audio
+  DateTime? _oraDiInizio;
   DateTime? _ultimoControlloPoi;
   bool _isCercandoPoi = false;
-
-  String? luogoVicinoAttuale; // Nome del luogo di interesse più vicino
-  int _ultimoKmAnnunciato = 0; // Per evitare annunci ripetuti
+  int _ultimoKmAnnunciato = 0;
+  int _ultimoMinutoAnnunciato = 0;
 
   Timer? _timer;
   StreamSubscription<GeoPoint>? _locationSubscription;
 
-  //FUNZIONE PER IL DEBUG
   Future<void> cambiaSorgenteGps(bool usaMock) async {
-    if (usaGpsSimulato == usaMock) return; // nessun cambio reale
+    if (usaGpsSimulato == usaMock) return;
     usaGpsSimulato = usaMock;
 
-    //Ferma
     await _locationSubscription?.cancel();
     _locationSubscription = null;
     await _locationService.ferma();
 
     tracciaGps.clear();
     kmPercorsi = 0.0;
+    if (_oraDiInizio != null) _oraDiInizio = DateTime.now();
 
-    // INIEZIONE DEL PERCORSO DI TEST
     if (usaMock) {
       final mock = MockLocationService();
-      mock.impostaPercorsoAlbaAdriatica(); // carica il percorso forzato
+      mock.impostaPercorsoAlbaAdriatica();
       _locationService = mock;
     } else {
       _locationService = LocationService();
     }
 
-    // 4. Se l'attività è in corso, riavvia con il nuovo motore
     if (inCorso) {
-      await _locationService.inizializza(); // il controller è già pronto
-      _ascoltaPosizione(); // ora il listener c'è prima dei dati
+      await _locationService.inizializza();
+      _ascoltaPosizione();
     }
-
     notifyListeners();
   }
-  //////////////////////////////////
 
   Future<void> avviaAttivita() async {
     try {
       await _locationService.inizializza();
       await audioGuideService.inizializza();
-      _poiService.inizializza();
+
+      // Se hai il metodo inizializza nel PoiService, chiamalo, altrimenti resettalo.
+      try {
+        _poiService.inizializza();
+      } catch (_) {}
+
       inCorso = true;
+      _oraDiInizio = DateTime.now(); // Per il conteggio immune al background
 
       await audioGuideService.parla("Attività avviata. Iniziamo!");
 
@@ -87,9 +82,7 @@ class AttivitaViewModel extends ChangeNotifier {
       _ascoltaPosizione();
       notifyListeners();
     } catch (e) {
-      // Gestione errori di inizializzazione (es. permessi negati)
-      print('Errore inizializzazione GPS: $e');
-      return;
+      print('Errore inizializzazione: $e');
     }
   }
 
@@ -99,26 +92,57 @@ class AttivitaViewModel extends ChangeNotifier {
   }
 
   void _inizioCronometro() {
-    _timer = Timer.periodic(const Duration(milliseconds: 250), (timer) {
-      durata += const Duration(milliseconds: 250);
-      notifyListeners();
+    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (_oraDiInizio != null) {
+        durata = DateTime.now().difference(_oraDiInizio!);
+        notifyListeners();
+      }
     });
   }
 
   void _ascoltaPosizione() {
     _locationSubscription = _locationService.positionStream.listen((punto) {
-      if (tracciaGps.isNotEmpty) {
-        //calcola la distanza tra l'ultimo punto e il nuovo punto
-        final ultimoPunto = tracciaGps.last;
-        final distanza = LocationUtils.calcolaDistanza(ultimoPunto, punto);
-        kmPercorsi += distanza;
+      try {
+        if (tracciaGps.isNotEmpty) {
+          final ultimoPunto = tracciaGps.last;
+          final distanza = LocationUtils.calcolaDistanza(ultimoPunto, punto);
+          kmPercorsi += distanza;
+        }
+        tracciaGps.add(punto);
+
+        _controllaTraguardiAudio(); // Controllo velocità e km
+        _controllaPOI(punto); // Controllo Luoghi
+
+        notifyListeners();
+      } catch (e) {
+        print("⚠️ [VIEWMODEL] Eccezione bloccata nel listener GPS: $e");
       }
-      tracciaGps.add(punto);
-
-      _controllaPOI(punto);
-
-      notifyListeners();
     });
+  }
+
+  void _controllaTraguardiAudio() {
+    double velocitaAttuale = 0.0;
+    if (durata.inSeconds > 0) {
+      velocitaAttuale = kmPercorsi / (durata.inSeconds / 3600.0);
+    }
+
+    int kmInteri = kmPercorsi.floor();
+    if (kmInteri > _ultimoKmAnnunciato) {
+      _ultimoKmAnnunciato = kmInteri;
+      audioGuideService.parla(
+        "Chilometro $kmInteri completato. Velocità media, ${velocitaAttuale.toStringAsFixed(1)} chilometri orari.",
+      );
+    }
+
+    int minutiAttuali = durata.inMinutes;
+    if (minutiAttuali > 0 &&
+        minutiAttuali % 10 == 0 &&
+        minutiAttuali > _ultimoMinutoAnnunciato) {
+      _ultimoMinutoAnnunciato = minutiAttuali;
+      audioGuideService.parla(
+        "Sei in cammino da $minutiAttuali minuti. Hai percorso ${kmPercorsi.toStringAsFixed(1)} chilometri.",
+      );
+    }
   }
 
   Future<void> _controllaPOI(GeoPoint posizione) async {
@@ -128,33 +152,23 @@ class AttivitaViewModel extends ChangeNotifier {
       final secondiTrascorsi = DateTime.now()
           .difference(_ultimoControlloPoi!)
           .inSeconds;
-      if (secondiTrascorsi < 10) {
-        //90
-        //1 minuto e mezzo di cooldown
-        return; // Troppo presto.
-      }
+      if (secondiTrascorsi < 10) return;
     }
 
-    // MUTUA ESCLUSIONE: lucchetto chiuso
     _isCercandoPoi = true;
 
     try {
       final luogo = await _poiService.trovaLuogoNaturaleVicino(posizione);
-
-      // Aggiorniamo l'ora dell'ultima chiamata riuscita
       _ultimoControlloPoi = DateTime.now();
 
-      String messaggio = "";
       if (luogo != null) {
         luogoVicinoAttuale = luogo;
-        messaggio = " Sei nei pressi di $luogo.";
-        await audioGuideService.parla(messaggio);
-        notifyListeners(); // Aggiorna l'interfaccia
+        await audioGuideService.parla("Sei nei pressi di $luogo.");
+        notifyListeners();
       }
     } catch (e) {
-      print("Errore durante il controllo POI: $e");
+      print("Errore controllo POI: $e");
     } finally {
-      // MUTUA ESCLUSIONE: lucchetto aperto
       _isCercandoPoi = false;
     }
   }
@@ -162,7 +176,7 @@ class AttivitaViewModel extends ChangeNotifier {
   Future<void> fermaESalva(UserProvider userProvider) async {
     inCorso = false;
     _timer?.cancel();
-    _locationSubscription?.cancel();
+    await _locationSubscription?.cancel();
 
     await _locationService.ferma();
     await audioGuideService.ferma();
@@ -178,9 +192,7 @@ class AttivitaViewModel extends ChangeNotifier {
       );
 
       await _activityRepository.salvaAttivita(nuovaAttivita);
-      await userProvider.caricaUtente(
-        forceRefresh: true,
-      ); // Ricarica i dati dell'utente per aggiornare km percorsi e livello
+      await userProvider.caricaUtente(forceRefresh: true);
     }
     notifyListeners();
   }
