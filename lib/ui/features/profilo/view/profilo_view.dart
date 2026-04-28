@@ -52,18 +52,38 @@ class _ProfiloViewState extends State<ProfiloView> {
       padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 30.0),
       child: Column(
         children: [
-          // 1. FOTO PROFILO
           Center(
+            // Mantiene tutto perfettamente centrato nella colonna
             child: Container(
               padding: const EdgeInsets.all(4),
               decoration: BoxDecoration(
                 color: theme.colorScheme.primary.withOpacity(0.1),
                 shape: BoxShape.circle,
               ),
-              child: const CircleAvatar(
-                radius: 60,
-                backgroundImage: AssetImage(
-                  'assets/images/default_profile_pic.png',
+              // Il ClipOval qui taglia TUTTO quello che c'è dentro in un cerchio
+              child: ClipOval(
+                child: SizedBox(
+                  width: 120, // Imposta la grandezza fissa per entrambi
+                  height: 120,
+                  child: Stack(
+                    children: [
+                      // 1. FOTO PROFILO (layer base)
+                      Positioned.fill(
+                        child: Image.asset(
+                          'assets/images/default_profile_pic.png',
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+
+                      // 2. MEDAGLIA (layer superiore)
+                      Positioned.fill(
+                        child: Image.asset(
+                          'assets/images/silver_medal.png',
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),

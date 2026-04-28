@@ -110,6 +110,13 @@ class LocationService implements LocationServiceBase {
   // NUOVO: Contatore per diagnostica
   int _dataReceivedCount = 0;
 
+  double _velocitaCorrente = 0.0;
+  double get velocitaCorrente => _velocitaCorrente;
+
+  set velocitaCorrente(double value) {
+    _velocitaCorrente = value;
+  }
+
   LocationService() {
     _taskDataCallback = _onReceiveTaskData;
   }
@@ -138,6 +145,11 @@ class LocationService implements LocationServiceBase {
         print("[MAIN THREAD] ❌ ERRORE: Controller è chiuso!");
         return;
       }
+
+      // Estrai la velocità
+      final speedMs = data['speed'] as double ?? 0.0;
+      print("[MAIN THREAD] 🚀 Velocità ricevuta: $speedMs m/s");
+      velocitaCorrente = speedMs * 3.6; // km/h
 
       // Estrai coordinate
       final lat = data['lat'] as double?;

@@ -79,6 +79,9 @@ flutter:
     - assets/images/default_profile_pic.png
     - assets/images/logo_decorated.png
     - assets/images/forest_bg.png
+    - assets/images/golden_medal.png
+    - assets/images/silver_medal.png
+    - assets/images/bronze_medal.png
 
     - assets/data/frasi.json
 
