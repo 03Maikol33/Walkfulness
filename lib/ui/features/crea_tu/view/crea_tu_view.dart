@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:provider/provider.dart';
 import 'package:walkfulness/data/services/location/routing_service.dart';
+import 'package:walkfulness/ui/core/providers/user_provider.dart';
 import 'package:walkfulness/ui/features/crea_tu/view_model/crea_tu_view_model.dart';
 
 class CreaTuView extends StatefulWidget {
@@ -407,13 +409,26 @@ class _CreaTuViewState extends State<CreaTuView>
             child: SizedBox(
               height: 55,
               child: ElevatedButton.icon(
-                onPressed: canAction ? () => _viewModel.salvaPercorso() : null,
+                onPressed: canAction
+                    ? () {
+                        final userProvider = Provider.of<UserProvider>(
+                          context,
+                          listen: false,
+                        );
+
+                        _viewModel.salvaPercorso(
+                          context,
+                          userProvider.utente!.uid,
+                          "Percorso di ${userProvider.utente!.nome ?? "utente"}",
+                        );
+                      }
+                    : null,
                 icon: Icon(
                   Icons.save_outlined,
                   color: canAction ? Colors.black87 : Colors.black38,
                 ),
                 label: const Text(
-                  "SALVA",
+                  "Salva",
                   style: TextStyle(
                     color: Colors.black87,
                     fontWeight: FontWeight.bold,
@@ -434,13 +449,24 @@ class _CreaTuViewState extends State<CreaTuView>
             child: SizedBox(
               height: 55,
               child: ElevatedButton.icon(
-                onPressed: canAction ? () => _viewModel.avviaSubito() : null,
+                onPressed: canAction
+                    ? () {
+                        final userProvider = Provider.of<UserProvider>(
+                          context,
+                          listen: false,
+                        );
+                        _viewModel.avviaSubito(
+                          context,
+                          userProvider.utente!.uid,
+                        );
+                      }
+                    : null,
                 icon: Icon(
                   Icons.play_arrow,
                   color: canAction ? Colors.white : Colors.black38,
                 ),
                 label: const Text(
-                  "AVVIA",
+                  "Avvia",
                   style: TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.bold,
@@ -506,7 +532,7 @@ class _CreaTuViewState extends State<CreaTuView>
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              "CREA PERCORSO",
+              "Crea percorso",
               style: GoogleFonts.notoSerif(
                 fontSize: 22,
                 fontWeight: FontWeight.bold,
@@ -523,15 +549,21 @@ class _CreaTuViewState extends State<CreaTuView>
               ),
               child: Row(
                 children: [
-                  Icon(Icons.search, color: cyan),
                   const SizedBox(width: 12),
-                  const Expanded(
-                    child: Text(
-                      "Cerca...",
-                      style: TextStyle(color: Colors.black38, fontSize: 16),
+                  Expanded(
+                    child: TextField(
+                      // Quando l'utente preme "Invio" sulla tastiera del telefono
+                      onSubmitted: (testo) {
+                        _viewModel.cercaEAggiungiLuogo(testo);
+                      },
+                      decoration: InputDecoration(
+                        hintText: "Cerca un luogo...",
+                        border: InputBorder.none,
+                        icon: Icon(Icons.search, color: cyan),
+                        //suffixIcon: const Icon(Icons.tune, color: Colors.grey),
+                      ),
                     ),
                   ),
-                  const Icon(Icons.tune, color: Colors.black38),
                 ],
               ),
             ),

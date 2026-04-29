@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:walkfulness/ui/features/attivita/view/attivita_view.dart';
 import 'ui/core/providers/user_provider.dart';
 import 'ui/core/theme/app_theme.dart';
 import 'ui/features/main_wrapper/view/main_wrapper_view.dart';
@@ -52,6 +53,7 @@ class MyApp extends StatelessWidget {
       routes: {
         "/login": (context) => const LoginView(),
         "/main": (context) => const MainWrapperView(),
+        "/attivita": (context) => const AttivitaView(),
       },
     );
   }

@@ -137,18 +137,18 @@ class LocationService implements LocationServiceBase {
 
       // Verifica che il controller sia valido
       if (_positionController == null) {
-        print("[MAIN THREAD] ❌ ERRORE: Controller è null!");
+        print("[MAIN THREAD] ERRORE: Controller è null!");
         return;
       }
 
       if (_positionController!.isClosed) {
-        print("[MAIN THREAD] ❌ ERRORE: Controller è chiuso!");
+        print("[MAIN THREAD] ERRORE: Controller è chiuso!");
         return;
       }
 
       // Estrai la velocità
       final speedMs = (data['speed'] as num?)?.toDouble() ?? 0.0;
-      print("[MAIN THREAD] 🚀 Velocità ricevuta: $speedMs m/s");
+      print("[MAIN THREAD] Velocità ricevuta: $speedMs m/s");
       velocitaCorrente = speedMs * 3.6; // km/h
 
       // Estrai coordinate
@@ -156,28 +156,28 @@ class LocationService implements LocationServiceBase {
       final lng = (data['lng'] as num?)?.toDouble();
 
       if (lat == null || lng == null) {
-        print("[MAIN THREAD] ⚠️ Coordinate mancanti: lat=$lat, lng=$lng");
+        print("[MAIN THREAD] Coordinate mancanti: lat=$lat, lng=$lng");
         return;
       }
 
-      print("[MAIN THREAD] 📍 Aggiungo GeoPoint($lat, $lng) allo stream");
+      print("[MAIN THREAD] Aggiungo GeoPoint($lat, $lng) allo stream");
       _positionController!.add(GeoPoint(lat, lng));
     } else {
       print(
-        "[MAIN THREAD] ⚠️ Dato ricevuto non è una Map: ${data.runtimeType}",
+        "[MAIN THREAD] Dato ricevuto non è una Map: ${data.runtimeType}",
       );
     }
   }
 
   @override
   Future<void> inizializza() async {
-    print("[MAIN THREAD] 🚀 Inizializzazione LocationService...");
+    print("[MAIN THREAD] Inizializzazione LocationService...");
 
     // 1. Cleanup del vecchio controller
     await _positionController?.close();
     _positionController = StreamController<GeoPoint>.broadcast();
     _dataReceivedCount = 0;
-    print("[MAIN THREAD] ✓ StreamController creato");
+    print("[MAIN THREAD]  StreamController creato");
 
     // 2. Permessi GPS
     LocationPermission permission = await Geolocator.checkPermission();
@@ -222,12 +222,12 @@ class LocationService implements LocationServiceBase {
         allowWifiLock: true,
       ),
     );
-    print("[MAIN THREAD] ✓ ForegroundTask configurato");
+    print("[MAIN THREAD] ForegroundTask configurato");
 
     // 5. CRITICO: Registra il callback PRIMA di avviare il servizio
     FlutterForegroundTask.removeTaskDataCallback(_taskDataCallback);
     FlutterForegroundTask.addTaskDataCallback(_taskDataCallback);
-    print("[MAIN THREAD] ✓ Callback registrato");
+    print("[MAIN THREAD] Callback registrato");
 
     // 6. NUOVO: Aspetta un momento per garantire la registrazione
     await Future.delayed(const Duration(milliseconds: 100));
@@ -264,11 +264,11 @@ class LocationService implements LocationServiceBase {
 
   @override
   Future<void> ferma() async {
-    print("[MAIN THREAD] 🛑 Fermata del LocationService...");
+    print("[MAIN THREAD] Fermata del LocationService...");
     FlutterForegroundTask.removeTaskDataCallback(_taskDataCallback);
     await FlutterForegroundTask.stopService();
     await _positionController?.close();
     _positionController = null;
-    print("[MAIN THREAD] ✓ LocationService fermato");
+    print("[MAIN THREAD] LocationService fermato");
   }
 }

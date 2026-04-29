@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_tts/flutter_tts.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:walkfulness/data/services/POI/poi_service.dart';
 import 'package:walkfulness/data/services/audio/audio_manager.dart';
 import 'package:walkfulness/data/services/audio/mindfulness_service.dart';
@@ -14,6 +15,8 @@ import 'package:walkfulness/ui/core/providers/user_provider.dart';
 import '../../../../data/services/location/mock_location_service.dart';
 import '../../../../data/repositories/activity_repository.dart';
 import '../../../../domain/models/activity_model.dart';
+import 'package:walkfulness/data/services/location/routing_service.dart';
+import 'package:walkfulness/ui/features/crea_tu/view_model/crea_tu_view_model.dart';
 
 class AttivitaViewModel extends ChangeNotifier {
   LocationServiceBase _locationService =
@@ -23,6 +26,10 @@ class AttivitaViewModel extends ChangeNotifier {
   final MindfulnessService _mindfulness = MindfulnessService();
   //final AudioGuideService audioGuideService = AudioGuideService();
   final ActivityRepository _activityRepository = ActivityRepository();
+  final RoutingService _routingService = RoutingService();
+  List<PinModel> tappePianificate = [];
+  List<LatLng> percorsoPianificatoCompleto =
+      []; //comprende anche i punti intermedi calcolati dal routing
 
   bool usaGpsSimulato = false;
   bool inCorso = false;
@@ -30,6 +37,8 @@ class AttivitaViewModel extends ChangeNotifier {
   Duration durata = Duration.zero;
   List<GeoPoint> tracciaGps = [];
   String? luogoVicinoAttuale;
+
+  List<LatLng> percorsoPianificato = [];
 
   bool isVoceAttiva = true; // Per il toggle della guida vocale
   bool isAmbienteAttivo = false; // Per il toggle della musica ambientale
@@ -43,6 +52,39 @@ class AttivitaViewModel extends ChangeNotifier {
 
   Timer? _timer;
   StreamSubscription<GeoPoint>? _locationSubscription;
+
+  Future<void> impostaPercorsoPianificato(List<PinModel> tappe) async {
+    // Evitiamo ricalcoli se il percorso è già stato caricato
+    if (tappePianificate.isNotEmpty || tappe.isEmpty) return;
+
+    tappePianificate = tappe;
+    notifyListeners(); // Notifica subito per far apparire almeno i pallini sulla mappa
+
+    List<LatLng> tracciaRicalcolata = [];
+
+    // Ricostruiamo segmento per segmento esattamente come nella schermata Crea Tu
+    for (int i = 0; i < tappe.length - 1; i++) {
+      final startPin = tappe[i];
+      final endPin = tappe[i + 1];
+
+      if (startPin.tipoRottaVersoProssimo == TipoRouting.automatico) {
+        final punti = await _routingService.calcolaOSRM(
+          startPin.coordinate,
+          endPin.coordinate,
+        );
+        tracciaRicalcolata.addAll(punti);
+      } else {
+        final punti = _routingService.calcolaLineaAria(
+          startPin.coordinate,
+          endPin.coordinate,
+        );
+        tracciaRicalcolata.addAll(punti);
+      }
+    }
+
+    percorsoPianificatoCompleto = tracciaRicalcolata;
+    notifyListeners(); // Notifica finale per far apparire la linea azzurra unita
+  }
 
   Future<void> cambiaSorgenteGps(bool usaMock) async {
     if (usaGpsSimulato == usaMock) return;
@@ -140,7 +182,7 @@ class AttivitaViewModel extends ChangeNotifier {
 
         notifyListeners();
       } catch (e) {
-        print("⚠️ [VIEWMODEL] Eccezione bloccata nel listener GPS: $e");
+        print("[VIEWMODEL] Eccezione bloccata nel listener GPS: $e");
       }
     });
   }

@@ -1,10 +1,14 @@
 import 'dart:async';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:uuid/uuid.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:walkfulness/data/services/location/routing_service.dart';
+import 'package:walkfulness/domain/models/percorso_model.dart';
 
 class PinModel {
   final String id;
@@ -76,6 +80,117 @@ class CreaTuViewModel extends ChangeNotifier {
           });
     } catch (e) {
       print("Errore GPS: $e");
+    }
+  }
+
+  // --- TASK 3: RICERCA LUOGHI (API Nominatim) ---
+  Future<void> cercaEAggiungiLuogo(String query) async {
+    if (query.trim().isEmpty) return;
+
+    print("Ricerca in corso per: $query...");
+    // Chiamata all'API gratuita di OpenStreetMap
+    final url = Uri.parse(
+      'https://nominatim.openstreetmap.org/search?q=$query&format=json&limit=1',
+    );
+
+    try {
+      final response = await http.get(
+        url,
+        headers: {
+          'User-Agent':
+              'WalkfulnessApp/1.0', // Nominatim richiede un User-Agent
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body) as List;
+        if (data.isNotEmpty) {
+          final result = data[0];
+          final lat = double.parse(result['lat']);
+          final lon = double.parse(result['lon']);
+          // Estrapoliamo un nome pulito (prima della virgola)
+          final nomeLuogo = result['display_name'].toString().split(',').first;
+
+          // Creiamo il punto e spostiamo la mappa
+          final puntoTrovato = LatLng(lat, lon);
+          mapController.move(puntoTrovato, 16.0);
+
+          // Aggiungiamo il pin col nome reale appena trovato!
+          final nuovoPin = PinModel(
+            coordinate: puntoTrovato,
+            indirizzoMock: nomeLuogo,
+          );
+          pinSelezionati.add(nuovoPin);
+          _aggiornaInterfaccia();
+        } else {
+          print("Nessun luogo trovato.");
+        }
+      }
+    } catch (e) {
+      print("Errore geocoding: $e");
+    }
+  }
+
+  Future<bool> salvaPercorso(
+    BuildContext context,
+    String utenteId,
+    String nomePercorso,
+  ) async {
+    if (pinSelezionati.length < 2) return false;
+
+    try {
+      // Mappiamo i Pin nel formato corretto per Firebase
+      final tappeFirebase = pinSelezionati
+          .map(
+            (pin) => {
+              'lat': pin.coordinate.latitude,
+              'lon': pin.coordinate.longitude,
+              'nome': pin.indirizzoMock,
+              'routingAutomatico':
+                  pin.tipoRottaVersoProssimo == TipoRouting.automatico,
+            },
+          )
+          .toList();
+
+      final nuovoPercorso = PercorsoModel(
+        utenteId: utenteId,
+        nome: nomePercorso,
+        tappe: tappeFirebase,
+      );
+
+      await FirebaseFirestore.instance
+          .collection('percorsi')
+          .add(nuovoPercorso.toMap());
+      print("Percorso '$nomePercorso' salvato nel DB per l'utente $utenteId!");
+      Navigator.pushReplacementNamed(
+        context,
+        '/main',
+        arguments: pinSelezionati,
+      );
+      return true;
+    } catch (e) {
+      print("Errore nel salvataggio del percorso: $e");
+      return false;
+    }
+  }
+
+  Future<void> avviaSubito(BuildContext context, String utenteId) async {
+    if (pinSelezionati.length < 2) return;
+
+    //Salvia il percorso
+    if (await salvaPercorso(context, utenteId, "Percorso Rapido")) {
+      if (context.mounted) {
+        print("Percorso salvato, avvio attività...");
+        Navigator.pushReplacementNamed(
+          context,
+          '/attivita',
+          arguments: pinSelezionati,
+        );
+      }
+    } else {
+      print(
+        "Errore nel salvataggio del percorso, impossibile avviare l'attività.",
+      );
     }
   }
 
@@ -167,7 +282,7 @@ class CreaTuViewModel extends ChangeNotifier {
       return "Arrivo";
     return "Tappa ${index + 1}";
   }
-
+  /*
   void salvaPercorso() {
     if (pinSelezionati.length < 2) return;
     print("Percorso Salvato");
@@ -177,7 +292,7 @@ class CreaTuViewModel extends ChangeNotifier {
     if (pinSelezionati.length < 2) return;
     print("Avvio immediato attività...");
     // Qui andrà la logica per passare i dati alla vista attività
-  }
+  }*/
 
   @override
   void dispose() {

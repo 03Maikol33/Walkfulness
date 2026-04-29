@@ -6,6 +6,8 @@ import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
 import 'package:walkfulness/ui/core/providers/user_provider.dart';
 import '../view_model/attivita_view_model.dart';
+// IMPORTANTE: Importiamo il PinModel per poter leggere i dati in arrivo
+import 'package:walkfulness/ui/features/crea_tu/view_model/crea_tu_view_model.dart';
 
 class AttivitaView extends StatefulWidget {
   const AttivitaView({super.key});
@@ -16,7 +18,6 @@ class AttivitaView extends StatefulWidget {
 
 class _AttivitaViewState extends State<AttivitaView> {
   final _viewModel = AttivitaViewModel();
-
   final _mapController = MapController();
   int _puntiTracciati = 0;
 
@@ -25,6 +26,18 @@ class _AttivitaViewState extends State<AttivitaView> {
     super.initState();
     _viewModel.avviaAttivita();
     _viewModel.addListener(_centraMappa);
+  }
+
+  // Qui riceviamo i dati in arrivo da CreaTuView tramite ModalRoute
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final args = ModalRoute.of(context)?.settings.arguments;
+
+    if (args != null && args is List<PinModel>) {
+      // Passiamo l'intera lista di PinModel al ViewModel per il ricalcolo
+      _viewModel.impostaPercorsoPianificato(args);
+    }
   }
 
   void _centraMappa() {
@@ -73,7 +86,7 @@ class _AttivitaViewState extends State<AttivitaView> {
                       const SizedBox(height: 10),
                       _buildLandmarkCard(theme),
                       const SizedBox(height: 10),
-                      _buildPlayerCard(theme), // <-- Ora è interattivo!
+                      _buildPlayerCard(theme),
                       const SizedBox(height: 10),
                       _buildTerminateButton(context, theme),
                       const SizedBox(height: 20),
@@ -91,6 +104,17 @@ class _AttivitaViewState extends State<AttivitaView> {
   // --- COMPONENTI UI ---
 
   Widget _buildMapCard(ThemeData theme) {
+    // Cerchiamo di centrare la mappa sull'utente se disponibile, altrimenti sulla partenza del percorso
+    LatLng centroIniziale = const LatLng(42.358246, 13.386197);
+    if (_viewModel.tracciaGps.isNotEmpty) {
+      centroIniziale = LatLng(
+        _viewModel.tracciaGps.last.latitude,
+        _viewModel.tracciaGps.last.longitude,
+      );
+    } else if (_viewModel.percorsoPianificato.isNotEmpty) {
+      centroIniziale = _viewModel.percorsoPianificato.first;
+    }
+
     return Container(
       height: 200,
       margin: const EdgeInsets.symmetric(horizontal: 24),
@@ -101,15 +125,7 @@ class _AttivitaViewState extends State<AttivitaView> {
       clipBehavior: Clip.antiAlias,
       child: FlutterMap(
         mapController: _mapController,
-        options: MapOptions(
-          initialCenter: _viewModel.tracciaGps.isNotEmpty
-              ? LatLng(
-                  _viewModel.tracciaGps.last.latitude,
-                  _viewModel.tracciaGps.last.longitude,
-                )
-              : const LatLng(42.358246, 13.386197),
-          initialZoom: 16.0,
-        ),
+        options: MapOptions(initialCenter: centroIniziale, initialZoom: 16.0),
         children: [
           TileLayer(
             urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
@@ -117,6 +133,16 @@ class _AttivitaViewState extends State<AttivitaView> {
           ),
           PolylineLayer(
             polylines: [
+              // --- 1. IL PERCORSO TEORICO RICALCOLATO (Azzurro semitrasparente) ---
+              if (_viewModel.percorsoPianificatoCompleto.isNotEmpty)
+                Polyline(
+                  points: _viewModel.percorsoPianificatoCompleto,
+                  color: Colors.cyan.withOpacity(0.6),
+                  strokeWidth: 8,
+                  // Niente isDotted, usiamo una linea solida "guida" come nei navigatori veri
+                ),
+
+              // --- 2. LA TUA TRACCIA GPS REALE (Linea solida scura del colore primario) ---
               Polyline(
                 points: _viewModel.tracciaGps
                     .map((p) => LatLng(p.latitude, p.longitude))
@@ -128,6 +154,28 @@ class _AttivitaViewState extends State<AttivitaView> {
           ),
           MarkerLayer(
             markers: [
+              // --- MARKER DELLE TAPPE (Usiamo la nuova lista tappePianificate) ---
+              ..._viewModel.tappePianificate
+                  .map(
+                    (pin) => Marker(
+                      point: pin.coordinate,
+                      width: 16,
+                      height: 16,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: Colors.cyan,
+                          shape: BoxShape.circle,
+                          border: Border.all(color: Colors.white, width: 2),
+                          boxShadow: const [
+                            BoxShadow(color: Colors.black26, blurRadius: 4),
+                          ],
+                        ),
+                      ),
+                    ),
+                  )
+                  .toList(),
+
+              // --- MARKER DELL'UTENTE (Posizione attuale) ---
               if (_viewModel.tracciaGps.isNotEmpty)
                 Marker(
                   point: LatLng(
@@ -231,7 +279,6 @@ class _AttivitaViewState extends State<AttivitaView> {
           children: [
             TextButton(
               onPressed: () {
-                // Utilizza la nuova variabile di stato nel ViewModel
                 _viewModel.toggleGuidaVocale(!_viewModel.isVoceAttiva);
               },
               child: Row(
@@ -251,7 +298,6 @@ class _AttivitaViewState extends State<AttivitaView> {
             ),
             TextButton(
               onPressed: () {
-                // Accende e spegne il layer 1 (Ambiente)
                 _viewModel.toggleSuoniAmbientali();
               },
               child: Row(
@@ -346,7 +392,6 @@ class _AttivitaViewState extends State<AttivitaView> {
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
               const Icon(Icons.skip_previous, color: Colors.grey),
-              // Tasto Play/Pausa reso interattivo
               GestureDetector(
                 onTap: () {
                   _viewModel.toggleSuoniAmbientali();
