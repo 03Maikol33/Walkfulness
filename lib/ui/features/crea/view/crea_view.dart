@@ -1,7 +1,5 @@
-import 'dart:ffi';
 
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:walkfulness/ui/core/widgets/action_card.dart';
 import 'package:walkfulness/ui/features/attivita/view/attivita_view.dart';
 import 'package:walkfulness/ui/features/crea_tu/view/crea_tu_view.dart';

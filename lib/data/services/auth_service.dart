@@ -11,7 +11,7 @@ class AuthService {
         password: password,
       );
       return result.user; // Restituisce l'utente se il login va a buon fine
-    } on FirebaseAuthException catch (e) {
+    } on FirebaseAuthException {
       rethrow;
     } catch (e) {
       print("Errore login: $e");

@@ -49,11 +49,11 @@ class _ForestaViewState extends State<ForestaView> {
 
           // 2. CITAZIONE (Vincolata al 55%)
           SizedBox(
-            width: MediaQuery.of(context).size.width * 0.55,
+            width: MediaQuery.of(context).size.width * 0.80,
             child: Text(
               "“${_viewModel.frase}”",
               style: GoogleFonts.aBeeZee(
-                fontSize: 18,
+                fontSize: 16,
                 fontWeight: FontWeight.w600,
                 color: theme.colorScheme.primary,
                 height: 1.3,
@@ -103,6 +103,7 @@ class _ForestaViewState extends State<ForestaView> {
     );
   }
 
+  /*
   Widget _buildBar(double height, {bool isMain = false}) {
     return Container(
       width: 12,
@@ -112,5 +113,5 @@ class _ForestaViewState extends State<ForestaView> {
         borderRadius: BorderRadius.circular(10),
       ),
     );
-  }
+  }*/
 }

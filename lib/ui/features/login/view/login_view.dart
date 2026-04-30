@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import '../../registrazione/view/registrazione_view.dart';
 import '../view_model/login_view_model.dart';
 
@@ -103,7 +102,7 @@ class _LoginViewState extends State<LoginView> {
                         ? null // Disabilita il tasto durante il caricamento
                         : () async {
                             // Chiamata al ViewModel
-                            final success = await _viewModel.accedi(
+                            await _viewModel.accedi(
                               _emailController.text.trim(),
                               _passwordController.text.trim(),
                             );

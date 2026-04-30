@@ -1,6 +1,4 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter/services.dart';
-import 'package:latlong2/latlong.dart';
 
 class PercorsoModel {
   final String? id;

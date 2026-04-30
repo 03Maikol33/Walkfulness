@@ -57,7 +57,7 @@ class _ProfiloViewState extends State<ProfiloView> {
             child: Container(
               padding: const EdgeInsets.all(4),
               decoration: BoxDecoration(
-                color: theme.colorScheme.primary.withOpacity(0.1),
+                color: theme.colorScheme.primary.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
               // Il ClipOval qui taglia TUTTO quello che c'è dentro in un cerchio

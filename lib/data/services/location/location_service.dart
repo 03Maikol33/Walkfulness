@@ -22,7 +22,7 @@ class LocationTaskHandler extends TaskHandler {
       accuracy: LocationAccuracy.high,
       distanceFilter: 3,
       forceLocationManager: true,
-      // NUOVO: Aumenta l'intervallo per dispositivi lenti
+      timeLimit: const Duration(seconds: 10), // timeout per ogni lettura
       intervalDuration: const Duration(milliseconds: 1000),
     );
 
@@ -31,7 +31,6 @@ class LocationTaskHandler extends TaskHandler {
       print("[ISOLATE] Tentativo getCurrentPosition...");
       final initialPos = await Geolocator.getCurrentPosition(
         locationSettings: locationSettings,
-        timeLimit: const Duration(seconds: 10), // NUOVO: timeout esplicito
       );
 
       print(
@@ -110,12 +109,7 @@ class LocationService implements LocationServiceBase {
   // NUOVO: Contatore per diagnostica
   int _dataReceivedCount = 0;
 
-  double _velocitaCorrente = 0.0;
-  double get velocitaCorrente => _velocitaCorrente;
-
-  set velocitaCorrente(double value) {
-    _velocitaCorrente = value;
-  }
+  double velocitaCorrente = 0.0;
 
   LocationService() {
     _taskDataCallback = _onReceiveTaskData;
@@ -163,9 +157,7 @@ class LocationService implements LocationServiceBase {
       print("[MAIN THREAD] Aggiungo GeoPoint($lat, $lng) allo stream");
       _positionController!.add(GeoPoint(lat, lng));
     } else {
-      print(
-        "[MAIN THREAD] Dato ricevuto non è una Map: ${data.runtimeType}",
-      );
+      print("[MAIN THREAD] Dato ricevuto non è una Map: ${data.runtimeType}");
     }
   }
 

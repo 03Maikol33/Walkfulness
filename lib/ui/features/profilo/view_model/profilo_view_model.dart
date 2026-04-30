@@ -1,8 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import '../../../../data/services/auth_service.dart';
-import '../../../../data/repositories/user_repository.dart';
-import '../../../../domain/models/user_model.dart';
 
 class ProfiloViewModel extends ChangeNotifier {
   final AuthService _authService = AuthService();

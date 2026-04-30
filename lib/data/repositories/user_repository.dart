@@ -1,7 +1,6 @@
 import 'dart:math';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import '../../domain/models/user_model.dart';
 
 //permette di trasformare i dati provenienti da Firestore in oggetti UserModel e di gestire le operazioni di lettura/scrittura su Firestore relative agli utenti

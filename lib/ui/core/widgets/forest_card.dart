@@ -16,7 +16,7 @@ class ForestCard extends StatelessWidget {
 
     return Card(
       elevation: 0,
-      color: theme.colorScheme.surfaceVariant.withOpacity(0.2),
+      color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.2),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(32)),
       child: Padding(
         padding: const EdgeInsets.all(24.0),
@@ -30,7 +30,7 @@ class ForestCard extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text("La Mia", style: theme.textTheme.titleLarge),
+                      Text("La Mia", style: theme.textTheme.titleMedium),
                       Text(
                         "Foresta",
                         style: theme.textTheme.headlineSmall?.copyWith(
@@ -41,7 +41,11 @@ class ForestCard extends StatelessWidget {
                   ),
                 ),
                 Chip(
-                  label: Text("LIVELLO ${livello}"),
+                  label: Text("LIVELLO $livello"),
+                  labelStyle: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 10,
+                  ),
                   backgroundColor: Colors.grey.shade300,
                   side: BorderSide.none,
                 ),

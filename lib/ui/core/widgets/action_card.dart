@@ -56,7 +56,7 @@ class ActionCard extends StatelessWidget {
                         ? Colors.white
                         : theme.colorScheme.primary,
                     fontWeight: FontWeight.normal,
-                    fontSize: 18,
+                    fontSize: 16,
                   ),
                 ),
                 const SizedBox(height: 4),

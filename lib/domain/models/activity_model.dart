@@ -38,7 +38,7 @@ class ActivityModel {
       userId: map['userId'] ?? '',
       km: (map['km'] as num).toDouble(),
       data: (map['data'] as Timestamp).toDate(),
-      durata: Duration(seconds: (map['durataSecondi'] as num).toInt() ?? 0),
+      durata: Duration(seconds: (map['durataSecondi'] as num).toInt()),
       percorso: List<GeoPoint>.from(map['percorso'] ?? []),
       meteo: map['meteo'],
     );

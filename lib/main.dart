@@ -32,6 +32,7 @@ class MyApp extends StatelessWidget {
       title: 'Walkfulness',
       theme: WalkfulnessTheme.lightTheme,
       home: StreamBuilder<User?>(
+        // mostra la schermata giusta in base allo stato di autenticazione
         stream: FirebaseAuth.instance.authStateChanges(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
@@ -41,9 +42,16 @@ class MyApp extends StatelessWidget {
           }
 
           if (snapshot.hasData) {
+            //se c'è un utente loggato, mostro la schermata principale
             // L'utente è loggato. Diciamo al provider di caricare i dati una volta sola.
             // Usiamo Future.microtask per evitare errori di build
-            Future.microtask(() => context.read<UserProvider>().caricaUtente());
+            Future.microtask(() {
+              if (context.mounted) {
+                //devo anche controllare se il contesto è ancora montato prima di chiamare il provider
+                //perché potrebbe capitare che l'utente durante l'attesa chiuda la schermata ...
+                context.read<UserProvider>().caricaUtente();
+              }
+            });
             return const MainWrapperView();
           }
 

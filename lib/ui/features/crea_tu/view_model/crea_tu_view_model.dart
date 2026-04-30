@@ -38,8 +38,9 @@ class CreaTuViewModel extends ChangeNotifier {
   }
 
   void cambiaTipoRouting(int index) {
-    if (index >= pinSelezionati.length - 1)
+    if (index >= pinSelezionati.length - 1) {
       return; // L'ultimo pin non va da nessuna parte
+    }
 
     final pin = pinSelezionati[index];
     pin.tipoRottaVersoProssimo =
@@ -62,7 +63,12 @@ class CreaTuViewModel extends ChangeNotifier {
 
     try {
       final position = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high,
+        locationSettings: const LocationSettings(
+          //const crea LocationSettings una sola votla
+          accuracy: LocationAccuracy.high,
+          distanceFilter: 3,
+        ),
+        //desiredAccuracy: LocationAccuracy.high,
       );
       posizioneUtente = LatLng(position.latitude, position.longitude);
       mapController.move(posizioneUtente!, 15.0);
@@ -162,11 +168,13 @@ class CreaTuViewModel extends ChangeNotifier {
           .collection('percorsi')
           .add(nuovoPercorso.toMap());
       print("Percorso '$nomePercorso' salvato nel DB per l'utente $utenteId!");
-      Navigator.pushReplacementNamed(
-        context,
-        '/main',
-        arguments: pinSelezionati,
-      );
+      if (context.mounted) {
+        Navigator.pushReplacementNamed(
+          context,
+          '/main',
+          arguments: pinSelezionati,
+        );
+      }
       return true;
     } catch (e) {
       print("Errore nel salvataggio del percorso: $e");
@@ -278,8 +286,9 @@ class CreaTuViewModel extends ChangeNotifier {
   String getTitoloPin(int index) {
     if (pinSelezionati.isEmpty) return "";
     if (index == 0) return "Partenza";
-    if (index == pinSelezionati.length - 1 && pinSelezionati.length > 1)
+    if (index == pinSelezionati.length - 1 && pinSelezionati.length > 1) {
       return "Arrivo";
+    }
     return "Tappa ${index + 1}";
   }
   /*

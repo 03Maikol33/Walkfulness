@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:walkfulness/data/repositories/user_repository.dart';
 import 'package:walkfulness/data/services/frase_service.dart';
 import 'package:walkfulness/domain/models/user_model.dart';
-import 'package:walkfulness/ui/features/profilo/view/profilo_view.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 class ForestaViewModel extends ChangeNotifier {

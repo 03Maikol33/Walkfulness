@@ -104,7 +104,7 @@ class _RegistrazioneViewState extends State<RegistrazioneView> {
                     onPressed: _viewModel.isLoading
                         ? null
                         : () async {
-                            final success = await _viewModel.registra(
+                            await _viewModel.registra(
                               email: _emailController.text.trim(),
                               password: _passwordController.text.trim(),
                               confermaPassword: _confermaPasswordController.text

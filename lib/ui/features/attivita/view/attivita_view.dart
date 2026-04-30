@@ -1,4 +1,3 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -120,7 +119,7 @@ class _AttivitaViewState extends State<AttivitaView> {
       margin: const EdgeInsets.symmetric(horizontal: 24),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(32),
-        color: Colors.white.withOpacity(0.9),
+        color: Colors.white.withValues(alpha: 0.9),
       ),
       clipBehavior: Clip.antiAlias,
       child: FlutterMap(
@@ -137,7 +136,7 @@ class _AttivitaViewState extends State<AttivitaView> {
               if (_viewModel.percorsoPianificatoCompleto.isNotEmpty)
                 Polyline(
                   points: _viewModel.percorsoPianificatoCompleto,
-                  color: Colors.cyan.withOpacity(0.6),
+                  color: Colors.cyan.withValues(alpha: 0.6),
                   strokeWidth: 8,
                   // Niente isDotted, usiamo una linea solida "guida" come nei navigatori veri
                 ),
@@ -155,25 +154,23 @@ class _AttivitaViewState extends State<AttivitaView> {
           MarkerLayer(
             markers: [
               // --- MARKER DELLE TAPPE (Usiamo la nuova lista tappePianificate) ---
-              ..._viewModel.tappePianificate
-                  .map(
-                    (pin) => Marker(
-                      point: pin.coordinate,
-                      width: 16,
-                      height: 16,
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: Colors.cyan,
-                          shape: BoxShape.circle,
-                          border: Border.all(color: Colors.white, width: 2),
-                          boxShadow: const [
-                            BoxShadow(color: Colors.black26, blurRadius: 4),
-                          ],
-                        ),
-                      ),
+              ..._viewModel.tappePianificate.map(
+                (pin) => Marker(
+                  point: pin.coordinate,
+                  width: 16,
+                  height: 16,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.cyan,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.white, width: 2),
+                      boxShadow: const [
+                        BoxShadow(color: Colors.black26, blurRadius: 4),
+                      ],
                     ),
-                  )
-                  .toList(),
+                  ),
+                ),
+              ),
 
               // --- MARKER DELL'UTENTE (Posizione attuale) ---
               if (_viewModel.tracciaGps.isNotEmpty)
@@ -191,7 +188,7 @@ class _AttivitaViewState extends State<AttivitaView> {
                       border: Border.all(color: Colors.white, width: 3),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.3),
+                          color: Colors.black.withValues(alpha: 0.3),
                           blurRadius: 4,
                           offset: const Offset(0, 2),
                         ),
@@ -271,7 +268,7 @@ class _AttivitaViewState extends State<AttivitaView> {
       margin: const EdgeInsets.symmetric(horizontal: 24),
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.8),
+        color: Colors.white.withValues(alpha: 0.8),
         borderRadius: BorderRadius.circular(40),
       ),
       child: FittedBox(
@@ -328,7 +325,7 @@ class _AttivitaViewState extends State<AttivitaView> {
       margin: const EdgeInsets.symmetric(horizontal: 24),
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.8),
+        color: Colors.white.withValues(alpha: 0.8),
         borderRadius: BorderRadius.circular(40),
       ),
       child: Row(
@@ -368,7 +365,7 @@ class _AttivitaViewState extends State<AttivitaView> {
       margin: const EdgeInsets.symmetric(horizontal: 24),
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.9),
+        color: Colors.white.withValues(alpha: 0.9),
         borderRadius: BorderRadius.circular(40),
       ),
       child: Column(
@@ -468,7 +465,7 @@ class _AttivitaViewState extends State<AttivitaView> {
                   listen: false,
                 );
                 await _viewModel.fermaESalva(userProvider);
-                if (mounted) {
+                if (context.mounted) {
                   Navigator.pop(context);
                 }
               },
@@ -485,7 +482,7 @@ class _AttivitaViewState extends State<AttivitaView> {
       margin: const EdgeInsets.symmetric(horizontal: 24),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       decoration: BoxDecoration(
-        color: Colors.amber.shade100,
+        color: Colors.amber.shade100.withValues(alpha: 0.8),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: Colors.amber, width: 2),
       ),

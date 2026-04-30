@@ -34,7 +34,7 @@ class WalkfulnessTheme {
 
       appBarTheme: AppBarTheme(
         titleTextStyle: GoogleFonts.notoSerif(
-          fontSize: 24,
+          fontSize: 18,
           fontWeight: FontWeight.normal,
           color: primaryGreen,
         ),
@@ -48,8 +48,8 @@ class WalkfulnessTheme {
       navigationBarTheme: NavigationBarThemeData(
         backgroundColor:
             backgroundLight, // Lo sfondo chiaro che abbiamo definito
-        indicatorColor: primaryGreen.withOpacity(
-          0.1,
+        indicatorColor: primaryGreen.withValues(
+          alpha: 0.1,
         ), // Il colore della "pillola" di selezione
         iconTheme: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.selected)) {
@@ -76,7 +76,7 @@ class WalkfulnessTheme {
       //configurazione font
       textTheme: TextTheme(
         headlineLarge: GoogleFonts.notoSerif(
-          fontSize: 32,
+          fontSize: 25,
           fontWeight: FontWeight.normal,
           color: primaryGreen,
         ),

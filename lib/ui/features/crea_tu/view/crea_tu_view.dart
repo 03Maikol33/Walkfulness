@@ -135,7 +135,7 @@ class _CreaTuViewState extends State<CreaTuView>
                             height: 35,
                             child: _buildMapMarker(theme, entry.key + 1),
                           );
-                        }).toList(),
+                        }),
                       ],
                     ),
                   ],
@@ -213,7 +213,7 @@ class _CreaTuViewState extends State<CreaTuView>
         border: Border.all(color: Colors.white, width: 3),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.3),
+            color: Colors.black.withValues(alpha: 0.3),
             blurRadius: 4,
             offset: const Offset(0, 2),
           ),
@@ -225,10 +225,11 @@ class _CreaTuViewState extends State<CreaTuView>
   Widget _buildHandleArea() {
     return GestureDetector(
       onVerticalDragEnd: (details) {
-        if (details.primaryVelocity! < -100)
+        if (details.primaryVelocity! < -100) {
           setState(() => _isEspanso = true);
-        else if (details.primaryVelocity! > 100)
+        } else if (details.primaryVelocity! > 100) {
           setState(() => _isEspanso = false);
+        }
       },
       onTap: () => setState(() => _isEspanso = !_isEspanso),
       child: Container(
@@ -326,7 +327,7 @@ class _CreaTuViewState extends State<CreaTuView>
                   ),
                   decoration: BoxDecoration(
                     color: pin.tipoRottaVersoProssimo == TipoRouting.automatico
-                        ? cyan.withOpacity(0.1)
+                        ? cyan.withValues(alpha: 0.1)
                         : Colors.grey.shade200,
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
@@ -521,10 +522,13 @@ class _CreaTuViewState extends State<CreaTuView>
         margin: const EdgeInsets.fromLTRB(24, 60, 24, 0),
         padding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.95),
+          color: Colors.white.withValues(alpha: 0.95),
           borderRadius: BorderRadius.circular(32),
           boxShadow: [
-            BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10),
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.05),
+              blurRadius: 10,
+            ),
           ],
         ),
         child: Column(
@@ -581,7 +585,7 @@ class _CreaTuViewState extends State<CreaTuView>
           Icon(
             Icons.add_location_alt_outlined,
             size: 50,
-            color: cyan.withOpacity(0.3),
+            color: cyan.withValues(alpha: 0.3),
           ),
           const SizedBox(height: 16),
           const Text(
