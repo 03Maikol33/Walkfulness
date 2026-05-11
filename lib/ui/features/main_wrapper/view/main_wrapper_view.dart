@@ -31,10 +31,9 @@ class _MainWrapperViewState extends State<MainWrapperView> {
     final viewModel = context.watch<MainWrapperViewModel>();
     return PopScope(
       canPop: viewModel.paginaInterna != null,
-      onPopInvoked: (didPop) {
-        if (!didPop) {
-          viewModel.chiudiPaginaInterna();
-        }
+      onPopInvokedWithResult: (bool didPop, Object? result) {
+        if (didPop) return;
+        viewModel.chiudiPaginaInterna();
       },
       child: Scaffold(
         appBar: AppBar(
