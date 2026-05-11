@@ -6,7 +6,9 @@ import 'package:provider/provider.dart';
 import 'package:walkfulness/data/services/location/routing_service.dart';
 import 'package:walkfulness/domain/models/percorso_model.dart';
 import 'package:walkfulness/ui/core/providers/user_provider.dart';
+import 'package:walkfulness/ui/features/crea_tu/view/salva_percorso_modal.dart';
 import 'package:walkfulness/ui/features/crea_tu/view_model/crea_tu_view_model.dart';
+import 'package:walkfulness/ui/features/main_wrapper/view_model/main_wrapper_view_model.dart';
 
 class CreaTuView extends StatefulWidget {
   const CreaTuView({super.key});
@@ -42,15 +44,29 @@ class _CreaTuViewState extends State<CreaTuView>
 
   @override
   void didChangeDependencies() {
-    //recupera il percorso se gli viene gia passato
     super.didChangeDependencies();
-    final args = ModalRoute.of(context)?.settings.arguments;
+
+    //legge gli argomenti dalla navigazione classica
+    Object? args = ModalRoute.of(context)?.settings.arguments;
+
+    // se non li trova prova a leggerli dal MainWrapper navigazione interna
+    if (args == null) {
+      args = Provider.of<MainWrapperViewModel>(
+        context,
+        listen: false,
+      ).arguments;
+    }
+
+    //se ha trovato il percorso in uno dei due modi lo carica
     if (args != null && args is PercorsoModel) {
-      _viewModel.caricaPercorsoEsistente(args);
+      // microtask per evitare conflitti mentre Flutter sta disegnando l'interfaccia
+      Future.microtask(() {
+        _viewModel.caricaPercorsoEsistente(args as PercorsoModel);
+      });
     }
   }
 
-  @override
+  /*@override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final cyanPrimary = theme.colorScheme.primary;
@@ -208,6 +224,258 @@ class _CreaTuViewState extends State<CreaTuView>
                 ),
               ),
             ],
+          );
+        },
+      ),
+    );
+  }*/
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final cyanPrimary = theme.colorScheme.primary;
+
+    // Calcolo dinamico delle altezze per evitare che il menù copra il titolo
+    final altezzaSchermo = MediaQuery.of(context).size.height;
+    // Altezza contratta: deve ospitare handle, barra di ricerca e un pezzetto di lista
+    final altezzaContratta = 250.0;
+    // Altezza espansa: lasciamo spazio al titolo superiore (circa 80-100px)
+    final altezzaEspansa = altezzaSchermo - 330.0;
+    final altezzaAttuale = _isEspanso ? altezzaEspansa : altezzaContratta;
+
+    return Scaffold(
+      backgroundColor: const Color(0xFFF7FBF8),
+      body: ListenableBuilder(
+        listenable: _viewModel,
+        builder: (context, _) {
+          Object? args =
+              ModalRoute.of(context)?.settings.arguments ??
+              Provider.of<MainWrapperViewModel>(
+                context,
+                listen: false,
+              ).arguments;
+          bool isDettaglio = args != null;
+
+          return SafeArea(
+            child: Column(
+              children: [
+                // --- 1. HEADER SUPERIORE MINIMALISTA ---
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
+                  child: Row(
+                    children: [
+                      Text(
+                        isDettaglio ? "Dettagli percorso" : "Crea percorso",
+                        style: theme.textTheme.headlineMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: cyanPrimary,
+                          fontSize: 22,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                // --- 2. AREA MAPPA + MENU INFERIORE ---
+                Expanded(
+                  child: Stack(
+                    children: [
+                      // MAPPA (Occupa tutto lo spazio rimanente)
+                      Positioned.fill(
+                        child: FlutterMap(
+                          mapController: _viewModel.mapController,
+                          options: MapOptions(
+                            initialCenter: const LatLng(42.358246, 13.386197),
+                            initialZoom: 15.0,
+                            onLongPress: (tap, point) =>
+                                _viewModel.aggiungiPin(point),
+                          ),
+                          children: [
+                            TileLayer(
+                              urlTemplate:
+                                  'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                              userAgentPackageName: 'com.walkfulness.app',
+                            ),
+                            PolylineLayer(
+                              polylines: _viewModel.lineePercorso
+                                  .where((p) => p.color != Colors.white)
+                                  .toList(),
+                            ),
+                            // Effetto AI Glowing
+                            AnimatedBuilder(
+                              animation: _animationController,
+                              builder: (context, child) {
+                                return ShaderMask(
+                                  shaderCallback: (rect) {
+                                    return LinearGradient(
+                                      begin: Alignment.topLeft,
+                                      end: Alignment.bottomRight,
+                                      transform: GradientRotation(
+                                        _animationController.value * 2 * 3.14,
+                                      ),
+                                      colors: const [
+                                        Color(0xFF001F12),
+                                        Color(0xFF00695C),
+                                        Color(0xFF00E5FF),
+                                        Color(0xFF7C4DFF),
+                                        Color(0xFFFF4081),
+                                        Color(0xFFFFD740),
+                                      ],
+                                      stops: const [
+                                        0.0,
+                                        0.2,
+                                        0.4,
+                                        0.6,
+                                        0.8,
+                                        1.0,
+                                      ],
+                                    ).createShader(rect);
+                                  },
+                                  child: PolylineLayer(
+                                    polylines: _viewModel.lineePercorso
+                                        .where((p) => p.color == Colors.white)
+                                        .map(
+                                          (p) => Polyline(
+                                            points: p.points,
+                                            strokeWidth: p.strokeWidth,
+                                            color: Colors.white,
+                                          ),
+                                        )
+                                        .toList(),
+                                  ),
+                                );
+                              },
+                            ),
+                            MarkerLayer(
+                              markers: [
+                                if (_viewModel.posizioneUtente != null)
+                                  Marker(
+                                    point: _viewModel.posizioneUtente!,
+                                    width: 24,
+                                    height: 24,
+                                    child: _buildUserLocationMarker(
+                                      cyanPrimary,
+                                    ),
+                                  ),
+                                ..._viewModel.pinSelezionati
+                                    .asMap()
+                                    .entries
+                                    .map((entry) {
+                                      return Marker(
+                                        point: entry.value.coordinate,
+                                        width: 35,
+                                        height: 35,
+                                        child: _buildMapMarker(
+                                          theme,
+                                          entry.key + 1,
+                                        ),
+                                      );
+                                    }),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      // --- 3. MENU INFERIORE CON RICERCA INTEGRATA ---
+                      Positioned(
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 300),
+                          curve: Curves.easeOutCubic,
+                          height: altezzaAttuale,
+                          decoration: const BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.vertical(
+                              top: Radius.circular(40),
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black12,
+                                blurRadius: 10,
+                                offset: Offset(0, -3),
+                              ),
+                            ],
+                          ),
+                          child: Column(
+                            children: [
+                              _buildHandleArea(),
+
+                              // BARRA DI RICERCA SPOSTATA QUI
+                              Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 24,
+                                  vertical: 8,
+                                ),
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFF0F3F6),
+                                    borderRadius: BorderRadius.circular(20),
+                                  ),
+                                  child: TextField(
+                                    onSubmitted: (testo) {
+                                      _viewModel.cercaEAggiungiLuogo(testo);
+                                    },
+                                    decoration: InputDecoration(
+                                      hintText:
+                                          "Cerca un luogo da aggiungere...",
+                                      hintStyle: const TextStyle(
+                                        fontSize: 14,
+                                        color: Colors.black38,
+                                      ),
+                                      prefixIcon: Icon(
+                                        Icons.search,
+                                        color: cyanPrimary,
+                                      ),
+                                      border: InputBorder.none,
+                                      contentPadding:
+                                          const EdgeInsets.symmetric(
+                                            vertical: 15,
+                                          ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+
+                              Expanded(
+                                child: _viewModel.pinSelezionati.isEmpty
+                                    ? _buildEmptyState(cyanPrimary)
+                                    : ReorderableListView.builder(
+                                        buildDefaultDragHandles: false,
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 16,
+                                        ),
+                                        itemCount:
+                                            _viewModel.pinSelezionati.length,
+                                        onReorder: _viewModel.riordinaPin,
+                                        itemBuilder: (context, index) {
+                                          final pin =
+                                              _viewModel.pinSelezionati[index];
+                                          return _buildPinListItem(
+                                            context,
+                                            index,
+                                            pin,
+                                            cyanPrimary,
+                                            theme,
+                                          );
+                                        },
+                                      ),
+                              ),
+                              _buildActionButtons(theme, cyanPrimary),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           );
         },
       ),
@@ -423,15 +691,13 @@ class _CreaTuViewState extends State<CreaTuView>
               child: ElevatedButton.icon(
                 onPressed: canAction
                     ? () {
-                        final userProvider = Provider.of<UserProvider>(
-                          context,
-                          listen: false,
-                        );
-
-                        _viewModel.salvaPercorso(
-                          context,
-                          userProvider.utente!.uid,
-                          "Percorso di ${userProvider.utente!.nome ?? "utente"}",
+                        // apre il BottomSheet passandogli il _viewModel attuale
+                        showModalBottomSheet(
+                          context: context,
+                          isScrollControlled: true,
+                          backgroundColor: Colors.transparent,
+                          builder: (ctx) =>
+                              SalvaPercorsoModal(viewModel: _viewModel),
                         );
                       }
                     : null,
@@ -519,7 +785,7 @@ class _CreaTuViewState extends State<CreaTuView>
       ),
     );
   }
-
+  /*
   Widget _buildFloatingHeader(
     BuildContext context,
     ThemeData theme,
@@ -586,28 +852,39 @@ class _CreaTuViewState extends State<CreaTuView>
         ),
       ),
     );
-  }
+  }*/
 
   Widget _buildEmptyState(Color cyan) {
     return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.add_location_alt_outlined,
-            size: 50,
-            color: cyan.withValues(alpha: 0.3),
-          ),
-          const SizedBox(height: 16),
-          const Text(
-            "Nessun punto inserito.",
-            style: TextStyle(color: Colors.black38),
-          ),
-          const Text(
-            "Tieni premuto sulla mappa per aggiungere un punto.",
-            style: TextStyle(fontSize: 12, color: Colors.black54),
-          ),
-        ],
+      // Aggiungiamo SingleChildScrollView per evitare l'overflow quando il pannello è chiuso
+      child: SingleChildScrollView(
+        physics: const BouncingScrollPhysics(), // Dà un bell'effetto elastico
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.add_location_alt_outlined,
+              size: 50,
+              color: cyan.withOpacity(
+                0.3,
+              ), // Usa withValues se sei su un Flutter molto recente
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              "Nessun punto inserito.",
+              style: TextStyle(color: Colors.black38),
+            ),
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 20),
+              child: Text(
+                "Tieni premuto sulla mappa per aggiungere un punto.",
+                style: TextStyle(fontSize: 12, color: Colors.black54),
+                textAlign:
+                    TextAlign.center, // Centriamo il testo nel caso vada a capo
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

@@ -4,17 +4,24 @@ class PercorsoModel {
   final String? id;
   final String utenteId; // ID dell'utente che ha creato il percorso
   final String nome;
+  final String nomeCreatore; // Nome dell'utente che ha creato il percorso
   final List<Map<String, dynamic>> tappe;
   final String? dataCreazione;
   bool isPublic;
+
+  final String citta;
+  final List<String> tags;
 
   PercorsoModel({
     this.id,
     required this.utenteId,
     required this.nome,
     required this.tappe,
+    this.nomeCreatore = "Sconosciuto",
     this.dataCreazione,
     this.isPublic = false, // Di default i percorsi sono privati
+    this.citta = "",
+    this.tags = const [],
   });
 
   Map<String, dynamic> toMap() {
@@ -24,6 +31,9 @@ class PercorsoModel {
       'tappe': tappe,
       'dataCreazione': FieldValue.serverTimestamp(),
       'isPublic': isPublic,
+      'nomeCreatore': nomeCreatore,
+      'citta': citta.toLowerCase(),
+      'tags': tags,
     };
   }
 
@@ -33,10 +43,13 @@ class PercorsoModel {
       utenteId: map['utenteId'] ?? '',
       nome: map['nome'] ?? '',
       tappe: List<Map<String, dynamic>>.from(map['tappe'] ?? []),
+      nomeCreatore: map['nomeCreatore'] ?? 'Sconosciuto',
       isPublic: map['isPublic'] ?? false,
       dataCreazione: map['dataCreazione'] != null
           ? (map['dataCreazione'] as Timestamp).toDate().toString()
           : null,
+      citta: map['citta'] ?? '',
+      tags: List<String>.from(map['tags'] ?? []),
     );
   }
 }

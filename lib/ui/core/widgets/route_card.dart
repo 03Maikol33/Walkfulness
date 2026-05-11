@@ -5,6 +5,7 @@ class RouteCard extends StatelessWidget {
   final String luogo;
   final String km;
   final String durata;
+  final String? sottotitolo;
   final String? imageAsset;
   final Widget actionButtons;
 
@@ -13,6 +14,7 @@ class RouteCard extends StatelessWidget {
     required this.luogo,
     required this.km,
     required this.durata,
+    this.sottotitolo,
     this.imageAsset,
     required this.actionButtons,
   });
@@ -116,6 +118,17 @@ class RouteCard extends StatelessWidget {
                             ],
                           ),
                         ),
+                        if (sottotitolo != null) ...[
+                          const SizedBox(height: 2),
+                          Text(
+                            sottotitolo!,
+                            style: TextStyle(
+                              color: Colors.white.withValues(alpha: 0.7),
+                              fontSize: 12,
+                              fontWeight: FontWeight.w400,
+                            ),
+                          ),
+                        ],
                       ],
                     ),
                   ),

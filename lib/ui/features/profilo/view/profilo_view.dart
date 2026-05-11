@@ -4,6 +4,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:walkfulness/ui/core/providers/user_provider.dart';
 import 'package:walkfulness/ui/core/widgets/forest_card.dart';
+import 'package:walkfulness/ui/features/main_wrapper/view_model/main_wrapper_view_model.dart';
+import 'package:walkfulness/ui/features/miei_percorsi/view/miei_percorsi_view.dart';
 import 'package:walkfulness/ui/features/profilo/view_model/profilo_view_model.dart';
 
 class ProfiloView extends StatefulWidget {
@@ -142,7 +144,16 @@ class _ProfiloViewState extends State<ProfiloView> {
             "Impostazioni Digital Detox",
           ),
           _buildMenuItem(context, Icons.history, "Storico Attività"),
-          _buildMenuItem(context, Icons.map_outlined, "I Miei Percorsi"),
+          _buildMenuItem(
+            context,
+            Icons.map_outlined,
+            "I Miei Percorsi",
+            onTap: () {
+              context.read<MainWrapperViewModel>().apriPaginaInterna(
+                const MieiPercorsiView(),
+              );
+            },
+          ),
 
           const SizedBox(height: 40),
 
@@ -233,7 +244,12 @@ class _ProfiloViewState extends State<ProfiloView> {
   }
 
   // HELPER: MENU ITEM
-  Widget _buildMenuItem(BuildContext context, IconData icon, String title) {
+  Widget _buildMenuItem(
+    BuildContext context,
+    IconData icon,
+    String title, {
+    VoidCallback? onTap,
+  }) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Card(
@@ -247,7 +263,7 @@ class _ProfiloViewState extends State<ProfiloView> {
             style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
           ),
           trailing: const Icon(Icons.chevron_right, color: Colors.grey),
-          onTap: () {},
+          onTap: onTap ?? () {},
         ),
       ),
     );

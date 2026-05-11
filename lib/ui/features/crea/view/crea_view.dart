@@ -5,6 +5,7 @@ import 'package:walkfulness/ui/features/attivita/view/attivita_view.dart';
 import 'package:walkfulness/ui/features/crea_tu/view/crea_tu_view.dart';
 import 'package:walkfulness/ui/features/main_wrapper/view_model/main_wrapper_view_model.dart';
 import 'package:walkfulness/ui/features/miei_percorsi/view/miei_percorsi_view.dart';
+import 'package:walkfulness/ui/features/percorsi_community/view/percorsi_community_view.dart';
 
 class CreaView extends StatelessWidget {
   const CreaView({super.key});
@@ -80,7 +81,11 @@ class CreaView extends StatelessWidget {
                     title: "Cerca Percorsi",
                     subtitle: "Esplora i percorsi della community",
                     icon: Icons.search,
-                    onTap: () {},
+                    onTap: () {
+                      context.read<MainWrapperViewModel>().apriPaginaInterna(
+                        const PercorsiCommunityView(),
+                      );
+                    },
                   ),
                 ),
                 const SizedBox(width: 8),

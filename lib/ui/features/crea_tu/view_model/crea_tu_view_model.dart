@@ -4,11 +4,13 @@ import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:walkfulness/data/services/location/routing_service.dart';
 import 'package:walkfulness/domain/models/percorso_model.dart';
+import 'package:walkfulness/ui/core/providers/user_provider.dart';
 
 class PinModel {
   final String id;
@@ -155,10 +157,26 @@ class CreaTuViewModel extends ChangeNotifier {
           )
           .toList();
 
+      String cittaRilevata = "";
+      if (pinSelezionati.isNotEmpty) {
+        cittaRilevata = await _routingService.rilevaCitta(
+          pinSelezionati[0].coordinate,
+        );
+      }
+
+      List<String> tags = [
+        "Natura",
+        "Relax",
+      ]; // TODO: Aggiungere selezione tag da UI
+
       final nuovoPercorso = PercorsoModel(
         utenteId: utenteId,
         nome: nomePercorso,
         tappe: tappeFirebase,
+        nomeCreatore:
+            context.read<UserProvider>().utente?.nome ?? "Sconosciuto",
+        citta: cittaRilevata,
+        tags: tags,
       );
 
       await FirebaseFirestore.instance
@@ -175,6 +193,54 @@ class CreaTuViewModel extends ChangeNotifier {
       return true;
     } catch (e) {
       print("Errore nel salvataggio del percorso: $e");
+      return false;
+    }
+  }
+
+  Future<bool> salvaPercorsoConDettagli({
+    required BuildContext context,
+    required String utenteId,
+    required String nome,
+    required bool isPublic,
+    required List<String> tags,
+  }) async {
+    if (pinSelezionati.length < 2) return false;
+
+    try {
+      final tappeFirebase = pinSelezionati
+          .map(
+            (pin) => {
+              'lat': pin.coordinate.latitude,
+              'lon': pin.coordinate.longitude,
+              'nome': pin.nome,
+              'routingAutomatico':
+                  pin.tipoRottaVersoProssimo == TipoRouting.automatico,
+            },
+          )
+          .toList();
+
+      // Rilevamento città dal primo punto
+      String cittaRilevata = await _routingService.rilevaCitta(
+        pinSelezionati[0].coordinate,
+      );
+
+      final nuovoPercorso = PercorsoModel(
+        utenteId: utenteId,
+        nome: nome,
+        tappe: tappeFirebase,
+        nomeCreatore:
+            context.read<UserProvider>().utente?.nome ?? "Sconosciuto",
+        citta: cittaRilevata,
+        tags: tags,
+        isPublic: isPublic, // Passiamo il valore scelto dall'utente
+      );
+
+      await FirebaseFirestore.instance
+          .collection('percorsi')
+          .add(nuovoPercorso.toMap());
+      return true;
+    } catch (e) {
+      debugPrint("Errore salvataggio: $e");
       return false;
     }
   }

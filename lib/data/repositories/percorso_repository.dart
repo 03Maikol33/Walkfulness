@@ -26,20 +26,31 @@ class PercorsoRepository {
 
   //PERCORSI DELLA COMMUNITY
   // Estrae tutti i percorsi che hanno il flag isPublic a true
-  Future<List<PercorsoModel>> getPercorsiCommunity() async {
+  Future<List<PercorsoModel>> getPercorsiCommunity({
+    String? citta,
+    String? tag,
+  }) async {
     try {
-      final snapshot = await _firestore
+      Query query = _firestore
           .collection('percorsi')
-          .where('isPublic', isEqualTo: true)
-          .orderBy('dataCreazione', descending: true)
-          .get();
+          .where('isPublic', isEqualTo: true);
+
+      if (citta != null && citta.trim().isNotEmpty) {
+        query = query.where('citta', isEqualTo: citta.trim().toLowerCase());
+      }
+
+      if (tag != null && tag.isNotEmpty) {
+        query = query.where('tags', arrayContains: tag);
+      }
+
+      final snapshot = await query.limit(30).get();
 
       return snapshot.docs.map((doc) {
-        final data = doc.data();
+        final data = doc.data() as Map<String, dynamic>;
         return PercorsoModel.fromMap(data, doc.id);
       }).toList();
     } catch (e) {
-      debugPrint("Errore nel recupero dei percorsi community: $e");
+      debugPrint("Errore nel recupero della community: $e");
       return [];
     }
   }

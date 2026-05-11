@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:walkfulness/domain/models/percorso_model.dart';
 import 'package:walkfulness/ui/core/widgets/route_card.dart';
+import 'package:walkfulness/ui/features/crea_tu/view/crea_tu_view.dart';
+import 'package:walkfulness/ui/features/main_wrapper/view_model/main_wrapper_view_model.dart';
 import 'package:walkfulness/ui/features/miei_percorsi/view_model/miei_percorsi_view_model.dart';
 import 'package:walkfulness/ui/core/providers/user_provider.dart';
 
@@ -50,6 +52,8 @@ class _MieiPercorsiViewState extends State<MieiPercorsiView> {
           ),*/
           body: Column(
             children: [
+              // Lista
+              Expanded(child: _buildContent(_viewModel)),
               // filtro (Pubblici / Privati)
               Padding(
                 padding: const EdgeInsets.symmetric(
@@ -76,9 +80,6 @@ class _MieiPercorsiViewState extends State<MieiPercorsiView> {
                   ],
                 ),
               ),
-
-              // Lista
-              Expanded(child: _buildContent(_viewModel)),
             ],
           ),
         );
@@ -210,7 +211,10 @@ class _MieiPercorsiViewState extends State<MieiPercorsiView> {
           height: 48,
           child: OutlinedButton.icon(
             onPressed: () {
-              Navigator.pushNamed(context, '/crea_tu', arguments: percorso);
+              context.read<MainWrapperViewModel>().apriPaginaInterna(
+                const CreaTuView(),
+                arguments: percorso, // Passiamo il percorso come argomento
+              );
             },
             icon: const Icon(Icons.search, color: Color(0xFF012D1C)),
             label: const Text(

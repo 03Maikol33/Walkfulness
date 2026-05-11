@@ -15,48 +15,45 @@ class MainWrapperView extends StatefulWidget {
 }
 
 class _MainWrapperViewState extends State<MainWrapperView> {
-  //istanziazione del view model
-  //final MainWrapperViewModel _viewModel = MainWrapperViewModel();
-
-  //lista delle pagine raggiungibili tramite il bottom navigation
+  // Lista delle pagine principali corrispondenti ai tab della navbar
   final List<Widget> _pages = [
-    const ForestaView(), // La tua schermata già pronta!
-    const CreaView(), // La tua schermata già pronta!
-    const TribuView(), // La tua schermata già pronta!
-    const ProfiloView(), // La tua schermata già pronta!
+    const ForestaView(),
+    const CreaView(),
+    const TribuView(),
+    const ProfiloView(),
   ];
 
   @override
   Widget build(BuildContext context) {
+    // Ascolta i cambiamenti nel ViewModel globale
     final viewModel = context.watch<MainWrapperViewModel>();
+
     return PopScope(
-      canPop: viewModel.paginaInterna != null,
+      // Impedisce la chiusura dell'app se c'è una pagina interna aperta
+      canPop: viewModel.paginaInterna == null,
       onPopInvokedWithResult: (bool didPop, Object? result) {
         if (didPop) return;
-        viewModel.chiudiPaginaInterna();
+        // Se l'utente usa il tasto indietro fisico chiude la pagina interna
+        if (viewModel.paginaInterna != null) {
+          viewModel.chiudiPaginaInterna();
+        }
       },
       child: Scaffold(
         appBar: AppBar(
-          title:
-              //const Text('Walkfulness')
-              Image.asset('assets/images/logo_decorated.png', height: 40),
+          title: Image.asset('assets/images/logo_decorated.png', height: 40),
           centerTitle: false,
         ),
-        // Se paginaInterna è null, mostra la pagina corrispondente a currentIndex
-        body:
-            viewModel.paginaInterna ??
-            IndexedStack(index: viewModel.currentIndex, children: _pages),
-
+        //se c'è una pagina interna la mostriamo, altrimenti usiamo l'IndexedStack
+        body: viewModel.paginaInterna != null
+            ? viewModel.paginaInterna!
+            : IndexedStack(index: viewModel.currentIndex, children: _pages),
         bottomNavigationBar: NavigationBar(
           selectedIndex: viewModel.currentIndex,
           onDestinationSelected: viewModel.cambiaPagina,
-
           destinations: const [
             NavigationDestination(
               icon: Icon(Icons.forest_outlined),
-              selectedIcon: Icon(
-                Icons.forest,
-              ), // Icona piena quando selezionata
+              selectedIcon: Icon(Icons.forest),
               label: "Foresta",
             ),
             NavigationDestination(
