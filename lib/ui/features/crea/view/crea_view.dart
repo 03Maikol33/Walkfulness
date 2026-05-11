@@ -1,8 +1,10 @@
-
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:walkfulness/ui/core/widgets/action_card.dart';
 import 'package:walkfulness/ui/features/attivita/view/attivita_view.dart';
 import 'package:walkfulness/ui/features/crea_tu/view/crea_tu_view.dart';
+import 'package:walkfulness/ui/features/main_wrapper/view_model/main_wrapper_view_model.dart';
+import 'package:walkfulness/ui/features/miei_percorsi/view/miei_percorsi_view.dart';
 
 class CreaView extends StatelessWidget {
   const CreaView({super.key});
@@ -87,7 +89,11 @@ class CreaView extends StatelessWidget {
                     title: "I miei percorsi",
                     subtitle: "Cerca tra quelli creati da te",
                     icon: Icons.map,
-                    onTap: () {},
+                    onTap: () {
+                      context.read<MainWrapperViewModel>().apriPaginaInterna(
+                        const MieiPercorsiView(),
+                      );
+                    },
                   ),
                 ),
               ],

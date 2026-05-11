@@ -8,6 +8,8 @@ class ActivityModel {
   final Duration durata; // Durata totale dell'attività
   final List<GeoPoint> percorso; // La lista di punti GPS
   final String? meteo; // Opzionale: Condizioni meteo
+  final String?
+  percorsoOrigineId; // Opzionale: ID del percorso di origine se è stato creato da un percorso predefinito
 
   ActivityModel({
     this.id,
@@ -17,6 +19,7 @@ class ActivityModel {
     required this.durata, //la durata totale è nota al momento dell'invocazione di questo cotruttore (cioè al termine dell'attività)
     required this.percorso,
     this.meteo,
+    this.percorsoOrigineId,
   });
 
   // da oggetto a mappa siu Firestore
@@ -28,6 +31,7 @@ class ActivityModel {
       'durataSecondi': durata.inSeconds,
       'percorso': percorso,
       'meteo': meteo,
+      'percorsoOrigineId': percorsoOrigineId,
     };
   }
 
@@ -41,6 +45,7 @@ class ActivityModel {
       durata: Duration(seconds: (map['durataSecondi'] as num).toInt()),
       percorso: List<GeoPoint>.from(map['percorso'] ?? []),
       meteo: map['meteo'],
+      percorsoOrigineId: map['percorsoOrigineId'],
     );
   }
 }

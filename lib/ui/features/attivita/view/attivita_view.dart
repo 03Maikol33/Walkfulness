@@ -3,6 +3,8 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
+import 'package:walkfulness/data/services/location/routing_service.dart';
+import 'package:walkfulness/domain/models/percorso_model.dart';
 import 'package:walkfulness/ui/core/providers/user_provider.dart';
 import '../view_model/attivita_view_model.dart';
 // IMPORTANTE: Importiamo il PinModel per poter leggere i dati in arrivo
@@ -28,13 +30,30 @@ class _AttivitaViewState extends State<AttivitaView> {
   }
 
   // Qui riceviamo i dati in arrivo da CreaTuView tramite ModalRoute
+  //metodo che viene chiamato automaticamente nel ciclo di vita di uno stateful widget quando le dipendenze cambiano (ad esempio quando arrivano nuovi dati da una route precedente)
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     final args = ModalRoute.of(context)?.settings.arguments;
 
+    if (args != null && args is PercorsoModel) {
+      // conversione da lista di map a lista di PinModel
+      final tappeConvertite = args.tappe.map((mappa) {
+        return PinModel(
+          coordinate: LatLng(mappa['lat'], mappa['lon']),
+          nome: mappa['nome'] ?? "",
+          tipoRottaVersoProssimo: mappa['routingAutomatico'] == true
+              ? TipoRouting.automatico
+              : TipoRouting.lineaAria,
+        );
+      }).toList();
+
+      // Ora passiamo i dati convertiti al ViewModel
+      _viewModel.impostaPercorsoPianificato(tappeConvertite, id: args.id);
+    }
+
     if (args != null && args is List<PinModel>) {
-      // Passiamo l'intera lista di PinModel al ViewModel per il ricalcolo
+      // Se arrivano già come PinModel (dalla schermata Crea Tu), passiamo direttamente
       _viewModel.impostaPercorsoPianificato(args);
     }
   }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import '../view_model/main_wrapper_view_model.dart';
 import '../../crea/view/crea_view.dart';
@@ -15,7 +16,7 @@ class MainWrapperView extends StatefulWidget {
 
 class _MainWrapperViewState extends State<MainWrapperView> {
   //istanziazione del view model
-  final MainWrapperViewModel _viewModel = MainWrapperViewModel();
+  //final MainWrapperViewModel _viewModel = MainWrapperViewModel();
 
   //lista delle pagine raggiungibili tramite il bottom navigation
   final List<Widget> _pages = [
@@ -27,49 +28,56 @@ class _MainWrapperViewState extends State<MainWrapperView> {
 
   @override
   Widget build(BuildContext context) {
-    return ListenableBuilder(
-      listenable: _viewModel,
-      builder: (context, child) {
-        return Scaffold(
-          appBar: AppBar(
-            title:
-                //const Text('Walkfulness')
-                Image.asset('assets/images/logo_decorated.png', height: 40),
-            centerTitle: false,
-          ),
-          body: IndexedStack(index: _viewModel.currentIndex, children: _pages),
-
-          bottomNavigationBar: NavigationBar(
-            selectedIndex: _viewModel.currentIndex,
-            onDestinationSelected: _viewModel.cambiaPagina,
-
-            destinations: const [
-              NavigationDestination(
-                icon: Icon(Icons.forest_outlined),
-                selectedIcon: Icon(
-                  Icons.forest,
-                ), // Icona piena quando selezionata
-                label: "Foresta",
-              ),
-              NavigationDestination(
-                icon: Icon(Icons.add_circle_outline),
-                selectedIcon: Icon(Icons.add_circle),
-                label: "Crea",
-              ),
-              NavigationDestination(
-                icon: Icon(Icons.groups_outlined),
-                selectedIcon: Icon(Icons.groups),
-                label: "Tribù",
-              ),
-              NavigationDestination(
-                icon: Icon(Icons.person_outline),
-                selectedIcon: Icon(Icons.person),
-                label: "Profilo",
-              ),
-            ],
-          ),
-        );
+    final viewModel = context.watch<MainWrapperViewModel>();
+    return PopScope(
+      canPop: viewModel.paginaInterna != null,
+      onPopInvoked: (didPop) {
+        if (!didPop) {
+          viewModel.chiudiPaginaInterna();
+        }
       },
+      child: Scaffold(
+        appBar: AppBar(
+          title:
+              //const Text('Walkfulness')
+              Image.asset('assets/images/logo_decorated.png', height: 40),
+          centerTitle: false,
+        ),
+        // Se paginaInterna è null, mostra la pagina corrispondente a currentIndex
+        body:
+            viewModel.paginaInterna ??
+            IndexedStack(index: viewModel.currentIndex, children: _pages),
+
+        bottomNavigationBar: NavigationBar(
+          selectedIndex: viewModel.currentIndex,
+          onDestinationSelected: viewModel.cambiaPagina,
+
+          destinations: const [
+            NavigationDestination(
+              icon: Icon(Icons.forest_outlined),
+              selectedIcon: Icon(
+                Icons.forest,
+              ), // Icona piena quando selezionata
+              label: "Foresta",
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.add_circle_outline),
+              selectedIcon: Icon(Icons.add_circle),
+              label: "Crea",
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.groups_outlined),
+              selectedIcon: Icon(Icons.groups),
+              label: "Tribù",
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.person_outline),
+              selectedIcon: Icon(Icons.person),
+              label: "Profilo",
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
 import 'package:walkfulness/data/services/location/routing_service.dart';
+import 'package:walkfulness/domain/models/percorso_model.dart';
 import 'package:walkfulness/ui/core/providers/user_provider.dart';
 import 'package:walkfulness/ui/features/crea_tu/view_model/crea_tu_view_model.dart';
 
@@ -37,6 +38,16 @@ class _CreaTuViewState extends State<CreaTuView>
     _viewModel.dispose();
     _animationController.dispose();
     super.dispose();
+  }
+
+  @override
+  void didChangeDependencies() {
+    //recupera il percorso se gli viene gia passato
+    super.didChangeDependencies();
+    final args = ModalRoute.of(context)?.settings.arguments;
+    if (args != null && args is PercorsoModel) {
+      _viewModel.caricaPercorsoEsistente(args);
+    }
   }
 
   @override
@@ -308,7 +319,7 @@ class _CreaTuViewState extends State<CreaTuView>
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              pin.indirizzoMock,
+              pin.nome,
               style: const TextStyle(fontSize: 11),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,

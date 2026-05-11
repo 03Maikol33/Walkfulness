@@ -5,6 +5,7 @@ class PercorsoModel {
   final String utenteId; // ID dell'utente che ha creato il percorso
   final String nome;
   final List<Map<String, dynamic>> tappe;
+  final String? dataCreazione;
   bool isPublic;
 
   PercorsoModel({
@@ -12,6 +13,7 @@ class PercorsoModel {
     required this.utenteId,
     required this.nome,
     required this.tappe,
+    this.dataCreazione,
     this.isPublic = false, // Di default i percorsi sono privati
   });
 
@@ -23,5 +25,18 @@ class PercorsoModel {
       'dataCreazione': FieldValue.serverTimestamp(),
       'isPublic': isPublic,
     };
+  }
+
+  factory PercorsoModel.fromMap(Map<String, dynamic> map, String documentId) {
+    return PercorsoModel(
+      id: documentId,
+      utenteId: map['utenteId'] ?? '',
+      nome: map['nome'] ?? '',
+      tappe: List<Map<String, dynamic>>.from(map['tappe'] ?? []),
+      isPublic: map['isPublic'] ?? false,
+      dataCreazione: map['dataCreazione'] != null
+          ? (map['dataCreazione'] as Timestamp).toDate().toString()
+          : null,
+    );
   }
 }

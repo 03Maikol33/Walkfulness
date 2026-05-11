@@ -13,12 +13,12 @@ import 'package:walkfulness/domain/models/percorso_model.dart';
 class PinModel {
   final String id;
   LatLng coordinate;
-  String indirizzoMock;
+  String nome;
   TipoRouting tipoRottaVersoProssimo;
 
   PinModel({
     required this.coordinate,
-    this.indirizzoMock = "Inizializzazione...",
+    this.nome = "Inizializzazione...",
     this.tipoRottaVersoProssimo = TipoRouting.lineaAria,
   }) : id = const Uuid().v4();
 }
@@ -89,7 +89,7 @@ class CreaTuViewModel extends ChangeNotifier {
     }
   }
 
-  // --- TASK 3: RICERCA LUOGHI (API Nominatim) ---
+  // RICERCA LUOGHI (API Nominatim)
   Future<void> cercaEAggiungiLuogo(String query) async {
     if (query.trim().isEmpty) return;
 
@@ -122,10 +122,7 @@ class CreaTuViewModel extends ChangeNotifier {
           mapController.move(puntoTrovato, 16.0);
 
           // Aggiungiamo il pin col nome reale appena trovato!
-          final nuovoPin = PinModel(
-            coordinate: puntoTrovato,
-            indirizzoMock: nomeLuogo,
-          );
+          final nuovoPin = PinModel(coordinate: puntoTrovato, nome: nomeLuogo);
           pinSelezionati.add(nuovoPin);
           _aggiornaInterfaccia();
         } else {
@@ -151,7 +148,7 @@ class CreaTuViewModel extends ChangeNotifier {
             (pin) => {
               'lat': pin.coordinate.latitude,
               'lon': pin.coordinate.longitude,
-              'nome': pin.indirizzoMock,
+              'nome': pin.nome,
               'routingAutomatico':
                   pin.tipoRottaVersoProssimo == TipoRouting.automatico,
             },
@@ -182,6 +179,22 @@ class CreaTuViewModel extends ChangeNotifier {
     }
   }
 
+  void caricaPercorsoEsistente(PercorsoModel percorso) {
+    pinSelezionati.clear();
+    for (var tappa in percorso.tappe) {
+      pinSelezionati.add(
+        PinModel(
+          coordinate: LatLng(tappa['lat'], tappa['lon']),
+          nome: tappa['nome'] ?? "",
+          tipoRottaVersoProssimo: tappa['routingAutomatico'] == true
+              ? TipoRouting.automatico
+              : TipoRouting.lineaAria,
+        ),
+      );
+    }
+    _aggiornaInterfaccia();
+  }
+
   Future<void> avviaSubito(BuildContext context, String utenteId) async {
     if (pinSelezionati.length < 2) return;
 
@@ -205,7 +218,7 @@ class CreaTuViewModel extends ChangeNotifier {
   void aggiungiPin(LatLng punto) {
     final nuovoPin = PinModel(
       coordinate: punto,
-      indirizzoMock:
+      nome:
           "Punto GPS: ${punto.latitude.toStringAsFixed(4)}, ${punto.longitude.toStringAsFixed(4)}",
     );
     pinSelezionati.add(nuovoPin);
@@ -291,17 +304,6 @@ class CreaTuViewModel extends ChangeNotifier {
     }
     return "Tappa ${index + 1}";
   }
-  /*
-  void salvaPercorso() {
-    if (pinSelezionati.length < 2) return;
-    print("Percorso Salvato");
-  }
-
-  void avviaSubito() {
-    if (pinSelezionati.length < 2) return;
-    print("Avvio immediato attività...");
-    // Qui andrà la logica per passare i dati alla vista attività
-  }*/
 
   @override
   void dispose() {

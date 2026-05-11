@@ -37,6 +37,7 @@ class AttivitaViewModel extends ChangeNotifier {
   String? luogoVicinoAttuale;
 
   List<LatLng> percorsoPianificato = [];
+  String? percorsoOrigineId;
 
   bool isVoceAttiva = true; // Per il toggle della guida vocale
   bool isAmbienteAttivo = false; // Per il toggle della musica ambientale
@@ -51,11 +52,15 @@ class AttivitaViewModel extends ChangeNotifier {
   Timer? _timer;
   StreamSubscription<GeoPoint>? _locationSubscription;
 
-  Future<void> impostaPercorsoPianificato(List<PinModel> tappe) async {
+  Future<void> impostaPercorsoPianificato(
+    List<PinModel> tappe, {
+    String? id,
+  }) async {
     // Evitiamo ricalcoli se il percorso è già stato caricato
     if (tappePianificate.isNotEmpty || tappe.isEmpty) return;
 
     tappePianificate = tappe;
+    percorsoOrigineId = id;
     notifyListeners(); // Notifica subito per far apparire almeno i pallini sulla mappa
 
     List<LatLng> tracciaRicalcolata = [];
@@ -255,6 +260,7 @@ class AttivitaViewModel extends ChangeNotifier {
         data: DateTime.now(),
         durata: durata,
         percorso: tracciaGps,
+        percorsoOrigineId: percorsoOrigineId,
       );
 
       await _activityRepository.salvaAttivita(nuovaAttivita);

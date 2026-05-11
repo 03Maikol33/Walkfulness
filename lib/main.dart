@@ -4,6 +4,8 @@ import 'package:provider/provider.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:walkfulness/ui/features/attivita/view/attivita_view.dart';
+import 'package:walkfulness/ui/features/crea_tu/view/crea_tu_view.dart';
+import 'package:walkfulness/ui/features/main_wrapper/view_model/main_wrapper_view_model.dart';
 import 'ui/core/providers/user_provider.dart';
 import 'ui/core/theme/app_theme.dart';
 import 'ui/features/main_wrapper/view/main_wrapper_view.dart';
@@ -16,8 +18,13 @@ void main() async {
   await Firebase.initializeApp();
 
   runApp(
-    ChangeNotifierProvider(
-      create: (_) => UserProvider(), // Non chiamare caricaUtente qui
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => UserProvider()),
+        ChangeNotifierProvider(
+          create: (_) => MainWrapperViewModel(),
+        ), // Ora è globale!
+      ],
       child: const MyApp(),
     ),
   );
@@ -62,6 +69,7 @@ class MyApp extends StatelessWidget {
         "/login": (context) => const LoginView(),
         "/main": (context) => const MainWrapperView(),
         "/attivita": (context) => const AttivitaView(),
+        "/crea_tu": (context) => const CreaTuView(),
       },
     );
   }
