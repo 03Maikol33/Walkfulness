@@ -22,6 +22,7 @@ class _CreaTuViewState extends State<CreaTuView>
   //per l'animazione
   final CreaTuViewModel _viewModel = CreaTuViewModel();
   bool _isEspanso = false;
+  bool _isReady = false;
 
   late AnimationController _animationController;
 
@@ -33,6 +34,14 @@ class _CreaTuViewState extends State<CreaTuView>
       vsync: this,
       duration: const Duration(seconds: 3),
     )..repeat(); // Fa scorrere il gradiente all'infinito
+
+    Future.delayed(const Duration(milliseconds: 350), () {
+      if (mounted) {
+        // accende la posizione solo dopo che la schermata è stata disegnata, per evitare problemi di lag
+        setState(() => _isReady = true);
+        _viewModel.inizializza(); // Ora possiamo accendere il GPS in sicurezza
+      }
+    });
   }
 
   @override
@@ -245,240 +254,281 @@ class _CreaTuViewState extends State<CreaTuView>
 
     return Scaffold(
       backgroundColor: const Color(0xFFF7FBF8),
-      body: ListenableBuilder(
-        listenable: _viewModel,
-        builder: (context, _) {
-          Object? args =
-              ModalRoute.of(context)?.settings.arguments ??
-              Provider.of<MainWrapperViewModel>(
-                context,
-                listen: false,
-              ).arguments;
-          bool isDettaglio = args != null;
+      body: !_isReady
+          ? const Center(child: CircularProgressIndicator())
+          : ListenableBuilder(
+              listenable: _viewModel,
+              builder: (context, _) {
+                Object? args =
+                    ModalRoute.of(context)?.settings.arguments ??
+                    Provider.of<MainWrapperViewModel>(
+                      context,
+                      listen: false,
+                    ).arguments;
+                bool isDettaglio = args != null;
 
-          return SafeArea(
-            child: Column(
-              children: [
-                // --- 1. HEADER SUPERIORE MINIMALISTA ---
-                Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 8,
-                  ),
-                  child: Row(
+                return SafeArea(
+                  child: Column(
                     children: [
-                      Text(
-                        isDettaglio ? "Dettagli percorso" : "Crea percorso",
-                        style: theme.textTheme.headlineMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: cyanPrimary,
-                          fontSize: 22,
+                      // --- 1. HEADER SUPERIORE MINIMALISTA ---
+                      Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 8,
                         ),
-                      ),
-                    ],
-                  ),
-                ),
-
-                // --- 2. AREA MAPPA + MENU INFERIORE ---
-                Expanded(
-                  child: Stack(
-                    children: [
-                      // MAPPA (Occupa tutto lo spazio rimanente)
-                      Positioned.fill(
-                        child: FlutterMap(
-                          mapController: _viewModel.mapController,
-                          options: MapOptions(
-                            initialCenter: const LatLng(42.358246, 13.386197),
-                            initialZoom: 15.0,
-                            onLongPress: (tap, point) =>
-                                _viewModel.aggiungiPin(point),
-                          ),
+                        child: Row(
                           children: [
-                            TileLayer(
-                              urlTemplate:
-                                  'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                              userAgentPackageName: 'com.walkfulness.app',
-                            ),
-                            PolylineLayer(
-                              polylines: _viewModel.lineePercorso
-                                  .where((p) => p.color != Colors.white)
-                                  .toList(),
-                            ),
-                            // Effetto AI Glowing
-                            AnimatedBuilder(
-                              animation: _animationController,
-                              builder: (context, child) {
-                                return ShaderMask(
-                                  shaderCallback: (rect) {
-                                    return LinearGradient(
-                                      begin: Alignment.topLeft,
-                                      end: Alignment.bottomRight,
-                                      transform: GradientRotation(
-                                        _animationController.value * 2 * 3.14,
-                                      ),
-                                      colors: const [
-                                        Color(0xFF001F12),
-                                        Color(0xFF00695C),
-                                        Color(0xFF00E5FF),
-                                        Color(0xFF7C4DFF),
-                                        Color(0xFFFF4081),
-                                        Color(0xFFFFD740),
-                                      ],
-                                      stops: const [
-                                        0.0,
-                                        0.2,
-                                        0.4,
-                                        0.6,
-                                        0.8,
-                                        1.0,
-                                      ],
-                                    ).createShader(rect);
-                                  },
-                                  child: PolylineLayer(
-                                    polylines: _viewModel.lineePercorso
-                                        .where((p) => p.color == Colors.white)
-                                        .map(
-                                          (p) => Polyline(
-                                            points: p.points,
-                                            strokeWidth: p.strokeWidth,
-                                            color: Colors.white,
-                                          ),
-                                        )
-                                        .toList(),
-                                  ),
-                                );
-                              },
-                            ),
-                            MarkerLayer(
-                              markers: [
-                                if (_viewModel.posizioneUtente != null)
-                                  Marker(
-                                    point: _viewModel.posizioneUtente!,
-                                    width: 24,
-                                    height: 24,
-                                    child: _buildUserLocationMarker(
-                                      cyanPrimary,
-                                    ),
-                                  ),
-                                ..._viewModel.pinSelezionati
-                                    .asMap()
-                                    .entries
-                                    .map((entry) {
-                                      return Marker(
-                                        point: entry.value.coordinate,
-                                        width: 35,
-                                        height: 35,
-                                        child: _buildMapMarker(
-                                          theme,
-                                          entry.key + 1,
-                                        ),
-                                      );
-                                    }),
-                              ],
+                            Text(
+                              isDettaglio
+                                  ? "Dettagli percorso"
+                                  : "Crea percorso",
+                              style: theme.textTheme.headlineMedium?.copyWith(
+                                fontWeight: FontWeight.bold,
+                                color: cyanPrimary,
+                                fontSize: 22,
+                              ),
                             ),
                           ],
                         ),
                       ),
 
-                      // --- 3. MENU INFERIORE CON RICERCA INTEGRATA ---
-                      Positioned(
-                        left: 0,
-                        right: 0,
-                        bottom: 0,
-                        child: AnimatedContainer(
-                          duration: const Duration(milliseconds: 300),
-                          curve: Curves.easeOutCubic,
-                          height: altezzaAttuale,
-                          decoration: const BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.vertical(
-                              top: Radius.circular(40),
-                            ),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black12,
-                                blurRadius: 10,
-                                offset: Offset(0, -3),
-                              ),
-                            ],
-                          ),
-                          child: Column(
-                            children: [
-                              _buildHandleArea(),
-
-                              // BARRA DI RICERCA SPOSTATA QUI
-                              Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 24,
-                                  vertical: 8,
-                                ),
-                                child: Container(
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFFF0F3F6),
-                                    borderRadius: BorderRadius.circular(20),
+                      // --- 2. AREA MAPPA + MENU INFERIORE ---
+                      Expanded(
+                        child: Stack(
+                          children: [
+                            // MAPPA (Occupa tutto lo spazio rimanente)
+                            Positioned.fill(
+                              child: FlutterMap(
+                                mapController: _viewModel.mapController,
+                                options: MapOptions(
+                                  initialCenter: const LatLng(
+                                    42.358246,
+                                    13.386197,
                                   ),
-                                  child: TextField(
-                                    onSubmitted: (testo) {
-                                      _viewModel.cercaEAggiungiLuogo(testo);
+                                  initialZoom: 15.0,
+                                  onLongPress: (tap, point) =>
+                                      _viewModel.aggiungiPin(point),
+                                ),
+                                children: [
+                                  TileLayer(
+                                    urlTemplate:
+                                        'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                                    userAgentPackageName: 'com.walkfulness.app',
+                                  ),
+                                  PolylineLayer(
+                                    polylines: _viewModel.lineePercorso
+                                        .where((p) => p.color != Colors.white)
+                                        .toList(),
+                                  ),
+                                  // Effetto AI Glowing
+                                  AnimatedBuilder(
+                                    animation: _animationController,
+                                    builder: (context, child) {
+                                      return ShaderMask(
+                                        shaderCallback: (rect) {
+                                          return LinearGradient(
+                                            begin: Alignment.topLeft,
+                                            end: Alignment.bottomRight,
+                                            transform: GradientRotation(
+                                              _animationController.value *
+                                                  2 *
+                                                  3.14,
+                                            ),
+                                            colors: const [
+                                              Color(0xFF001F12),
+                                              Color(0xFF00695C),
+                                              Color(0xFF00E5FF),
+                                              Color(0xFF7C4DFF),
+                                              Color(0xFFFF4081),
+                                              Color(0xFFFFD740),
+                                            ],
+                                            stops: const [
+                                              0.0,
+                                              0.2,
+                                              0.4,
+                                              0.6,
+                                              0.8,
+                                              1.0,
+                                            ],
+                                          ).createShader(rect);
+                                        },
+                                        child: PolylineLayer(
+                                          polylines: _viewModel.lineePercorso
+                                              .where(
+                                                (p) => p.color == Colors.white,
+                                              )
+                                              .map(
+                                                (p) => Polyline(
+                                                  points: p.points,
+                                                  strokeWidth: p.strokeWidth,
+                                                  color: Colors.white,
+                                                ),
+                                              )
+                                              .toList(),
+                                        ),
+                                      );
                                     },
-                                    decoration: InputDecoration(
-                                      hintText:
-                                          "Cerca un luogo da aggiungere...",
-                                      hintStyle: const TextStyle(
-                                        fontSize: 14,
-                                        color: Colors.black38,
-                                      ),
-                                      prefixIcon: Icon(
-                                        Icons.search,
-                                        color: cyanPrimary,
-                                      ),
-                                      border: InputBorder.none,
-                                      contentPadding:
-                                          const EdgeInsets.symmetric(
-                                            vertical: 15,
+                                  ),
+                                  MarkerLayer(
+                                    markers: [
+                                      if (_viewModel.posizioneUtente != null)
+                                        Marker(
+                                          point: _viewModel.posizioneUtente!,
+                                          width: 24,
+                                          height: 24,
+                                          child: _buildUserLocationMarker(
+                                            cyanPrimary,
                                           ),
+                                        ),
+                                      ..._viewModel.pinSelezionati
+                                          .asMap()
+                                          .entries
+                                          .map((entry) {
+                                            return Marker(
+                                              point: entry.value.coordinate,
+                                              width: 35,
+                                              height: 35,
+                                              child: _buildMapMarker(
+                                                theme,
+                                                entry.key + 1,
+                                              ),
+                                            );
+                                          }),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                            if (_viewModel.isCalcolandoRotta)
+                              Positioned.fill(
+                                child: Container(
+                                  color: Colors.white.withValues(alpha: 0.7),
+                                  child: Center(
+                                    child: Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        CircularProgressIndicator(
+                                          color: cyanPrimary,
+                                        ),
+                                        const SizedBox(height: 16),
+                                        Text(
+                                          "Calcolo del percorso...",
+                                          style: TextStyle(
+                                            color: cyanPrimary,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ],
                                     ),
                                   ),
                                 ),
                               ),
 
-                              Expanded(
-                                child: _viewModel.pinSelezionati.isEmpty
-                                    ? _buildEmptyState(cyanPrimary)
-                                    : ReorderableListView.builder(
-                                        buildDefaultDragHandles: false,
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 16,
-                                        ),
-                                        itemCount:
-                                            _viewModel.pinSelezionati.length,
-                                        onReorder: _viewModel.riordinaPin,
-                                        itemBuilder: (context, index) {
-                                          final pin =
-                                              _viewModel.pinSelezionati[index];
-                                          return _buildPinListItem(
-                                            context,
-                                            index,
-                                            pin,
-                                            cyanPrimary,
-                                            theme,
-                                          );
-                                        },
+                            // --- 3. MENU INFERIORE CON RICERCA INTEGRATA ---
+                            Positioned(
+                              left: 0,
+                              right: 0,
+                              bottom: 0,
+                              child: AnimatedContainer(
+                                duration: const Duration(milliseconds: 300),
+                                curve: Curves.easeOutCubic,
+                                height: altezzaAttuale,
+                                decoration: const BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.vertical(
+                                    top: Radius.circular(40),
+                                  ),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black12,
+                                      blurRadius: 10,
+                                      offset: Offset(0, -3),
+                                    ),
+                                  ],
+                                ),
+                                child: Column(
+                                  children: [
+                                    _buildHandleArea(),
+
+                                    // BARRA DI RICERCA SPOSTATA QUI
+                                    Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 24,
+                                        vertical: 8,
                                       ),
+                                      child: Container(
+                                        decoration: BoxDecoration(
+                                          color: const Color(0xFFF0F3F6),
+                                          borderRadius: BorderRadius.circular(
+                                            20,
+                                          ),
+                                        ),
+                                        child: TextField(
+                                          onSubmitted: (testo) {
+                                            _viewModel.cercaEAggiungiLuogo(
+                                              testo,
+                                            );
+                                          },
+                                          decoration: InputDecoration(
+                                            hintText:
+                                                "Cerca un luogo da aggiungere...",
+                                            hintStyle: const TextStyle(
+                                              fontSize: 14,
+                                              color: Colors.black38,
+                                            ),
+                                            prefixIcon: Icon(
+                                              Icons.search,
+                                              color: cyanPrimary,
+                                            ),
+                                            border: InputBorder.none,
+                                            contentPadding:
+                                                const EdgeInsets.symmetric(
+                                                  vertical: 15,
+                                                ),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+
+                                    Expanded(
+                                      child: _viewModel.pinSelezionati.isEmpty
+                                          ? _buildEmptyState(cyanPrimary)
+                                          : ReorderableListView.builder(
+                                              buildDefaultDragHandles: false,
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                    horizontal: 16,
+                                                  ),
+                                              itemCount: _viewModel
+                                                  .pinSelezionati
+                                                  .length,
+                                              onReorder: _viewModel.riordinaPin,
+                                              itemBuilder: (context, index) {
+                                                final pin = _viewModel
+                                                    .pinSelezionati[index];
+                                                return _buildPinListItem(
+                                                  context,
+                                                  index,
+                                                  pin,
+                                                  cyanPrimary,
+                                                  theme,
+                                                );
+                                              },
+                                            ),
+                                    ),
+                                    _buildActionButtons(theme, cyanPrimary),
+                                  ],
+                                ),
                               ),
-                              _buildActionButtons(theme, cyanPrimary),
-                            ],
-                          ),
+                            ),
+                          ],
                         ),
                       ),
                     ],
                   ),
-                ),
-              ],
+                );
+              },
             ),
-          );
-        },
-      ),
     );
   }
 

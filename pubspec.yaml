@@ -49,6 +49,7 @@ dependencies:
   audioplayers: ^6.6.0
 
   uuid: any
+  flutter_native_splash: ^2.4.7
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -84,8 +85,10 @@ flutter:
     - assets/images/golden_medal.png
     - assets/images/silver_medal.png
     - assets/images/bronze_medal.png
+    - assets/images/app_icon.png
 
     - assets/data/frasi.json
+
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
@@ -112,3 +115,12 @@ flutter:
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
+
+flutter_native_splash:
+  color: "#F8FAF9" # Il colore di sfondo chiaro della tua app
+  image: "assets/images/app_icon.png"
+  android: true
+  ios: true
+  android_12:
+    color: "#F8FAF9"
+    image: "assets/images/app_icon.png"

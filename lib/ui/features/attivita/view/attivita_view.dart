@@ -22,11 +22,20 @@ class _AttivitaViewState extends State<AttivitaView> {
   final _mapController = MapController();
   int _puntiTracciati = 0;
 
+  bool _isReady = false;
+
   @override
   void initState() {
     super.initState();
-    _viewModel.avviaAttivita();
+    //_viewModel.avviaAttivita();
     _viewModel.addListener(_centraMappa);
+    Future.delayed(const Duration(milliseconds: 350), () {
+      if (mounted) {
+        //evita il lag all'apertura della pagina
+        setState(() => _isReady = true);
+        _viewModel.avviaAttivita();
+      }
+    });
   }
 
   // Qui riceviamo i dati in arrivo da CreaTuView tramite ModalRoute
@@ -85,36 +94,48 @@ class _AttivitaViewState extends State<AttivitaView> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return Scaffold(
-      body: ListenableBuilder(
-        listenable: _viewModel,
-        builder: (context, _) {
-          return Stack(
-            children: [
-              SafeArea(
-                child: SingleChildScrollView(
-                  child: Column(
-                    children: [
-                      const SizedBox(height: 50),
-                      _buildMainStats(theme),
-                      _buildDebugToggle(),
-                      _buildAudioTogglesCard(theme),
-                      const SizedBox(height: 10),
-                      _buildMapCard(theme),
-                      const SizedBox(height: 10),
-                      _buildLandmarkCard(theme),
-                      const SizedBox(height: 10),
-                      _buildPlayerCard(theme),
-                      const SizedBox(height: 10),
-                      _buildTerminateButton(context, theme),
-                      const SizedBox(height: 20),
-                    ],
+    return PopScope(
+      canPop: false, // Impedisce la chiusura automatica
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+
+        if (_viewModel.inCorso) {
+          _mostraConfirmTermina(context);
+        } else {
+          Navigator.pop(context);
+        }
+      },
+      child: Scaffold(
+        body: ListenableBuilder(
+          listenable: _viewModel,
+          builder: (context, _) {
+            return Stack(
+              children: [
+                SafeArea(
+                  child: SingleChildScrollView(
+                    child: Column(
+                      children: [
+                        const SizedBox(height: 50),
+                        _buildMainStats(theme),
+                        _buildDebugToggle(),
+                        _buildAudioTogglesCard(theme),
+                        const SizedBox(height: 10),
+                        _buildMapCard(theme),
+                        const SizedBox(height: 10),
+                        _buildLandmarkCard(theme),
+                        const SizedBox(height: 10),
+                        _buildPlayerCard(theme),
+                        const SizedBox(height: 10),
+                        _buildTerminateButton(context, theme),
+                        const SizedBox(height: 20),
+                      ],
+                    ),
                   ),
                 ),
-              ),
-            ],
-          );
-        },
+              ],
+            );
+          },
+        ),
       ),
     );
   }

@@ -30,76 +30,94 @@ class _ForestaViewState extends State<ForestaView> {
     final userProvider = Provider.of<UserProvider>(context);
     final utente = userProvider.utente;
 
-    return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 20.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // 1. INTENTO GIORNALIERO
-          Text(
-            "PENSIERO DEL GIORNO",
-            style: GoogleFonts.inter(
-              fontSize: 12,
-              fontWeight: FontWeight.w800,
-              letterSpacing: 1.2,
-              color: Colors.grey.shade600,
-            ),
-          ),
-          const SizedBox(height: 12),
+    return ListenableBuilder(
+      listenable: _viewModel,
+      builder: (context, child) {
+        final utente = userProvider.utente;
 
-          // 2. CITAZIONE (Vincolata al 55%)
-          SizedBox(
-            width: MediaQuery.of(context).size.width * 0.80,
-            child: Text(
-              "“${_viewModel.frase}”",
-              style: GoogleFonts.aBeeZee(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: theme.colorScheme.primary,
-                height: 1.3,
+        if (_viewModel.isLoading || userProvider.isLoading) {
+          return Center(
+            child: CircularProgressIndicator(color: theme.colorScheme.primary),
+          );
+        }
+
+        if (utente == null) {
+          return const Center(child: Text("Errore nel caricamento dei dati"));
+        }
+
+        return SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 20.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // 1. INTENTO GIORNALIERO
+              Text(
+                "PENSIERO DEL GIORNO",
+                style: GoogleFonts.inter(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 1.2,
+                  color: Colors.grey.shade600,
+                ),
               ),
-            ),
-          ),
+              const SizedBox(height: 12),
 
-          const SizedBox(height: 32),
-
-          // 3. AZIONI (Row con IntrinsicHeight)
-          IntrinsicHeight(
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Expanded(
-                  child: ActionCard(
-                    title: "Avvia Subito",
-                    subtitle: "Cammina libero senza limiti",
-                    icon: Icons.bolt,
-                    isPrimary: true,
-                    onTap: () {},
+              // 2. CITAZIONE (Vincolata al 55%)
+              SizedBox(
+                width: MediaQuery.of(context).size.width * 0.80,
+                child: Text(
+                  "“${_viewModel.frase}”",
+                  style: GoogleFonts.aBeeZee(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: theme.colorScheme.primary,
+                    height: 1.3,
                   ),
                 ),
-                const SizedBox(width: 8),
-                const Expanded(
-                  child: ActionCard(
-                    title: "Storico attività",
-                    subtitle: "Visualizza le tue attività passate",
-                    icon: Icons.history,
-                  ),
+              ),
+
+              const SizedBox(height: 32),
+
+              // 3. AZIONI (Row con IntrinsicHeight)
+              IntrinsicHeight(
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Expanded(
+                      child: ActionCard(
+                        title: "Avvia Subito",
+                        subtitle: "Cammina libero senza limiti",
+                        icon: Icons.bolt,
+                        isPrimary: true,
+                        onTap: () {},
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    const Expanded(
+                      child: ActionCard(
+                        title: "Storico attività",
+                        subtitle: "Visualizza le tue attività passate",
+                        icon: Icons.history,
+                      ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
-          ),
+              ),
 
-          const SizedBox(height: 24),
+              const SizedBox(height: 24),
 
-          // 3. SEZIONE FORESTA (Card replicata per coerenza)
-          ForestCard(
-            livello: utente?.livelloCalcolato ?? 1, // Usa utente dal provider
-            percentuale:
-                utente?.percentualeLivello.toInt() ??
-                0, // Usa utente dal provider
+              // 3. SEZIONE FORESTA (Card replicata per coerenza)
+              ForestCard(
+                livello:
+                    utente?.livelloCalcolato ?? 1, // Usa utente dal provider
+                percentuale:
+                    utente?.percentualeLivello.toInt() ??
+                    0, // Usa utente dal provider
+              ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 

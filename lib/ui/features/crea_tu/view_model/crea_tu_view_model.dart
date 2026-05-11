@@ -31,11 +31,18 @@ class CreaTuViewModel extends ChangeNotifier {
   final List<PinModel> pinSelezionati = [];
   final List<Polyline> lineePercorso = [];
 
+  bool isCalcolndoRotta = false;
+  bool get isCalcolandoRotta => isCalcolndoRotta;
+
   LatLng? posizioneUtente;
   StreamSubscription<Position>? _positionSubscription;
 
   //costruttore
   CreaTuViewModel() {
+    //_inizializzaPosizioneUtente();
+  }
+
+  void inizializza() {
     _inizializzaPosizioneUtente();
   }
 
@@ -293,6 +300,7 @@ class CreaTuViewModel extends ChangeNotifier {
   }
 
   Future<void> _aggiornaInterfaccia() async {
+    isCalcolndoRotta = true;
     notifyListeners();
 
     lineePercorso.clear();
@@ -342,6 +350,7 @@ class CreaTuViewModel extends ChangeNotifier {
         }
       }
     }
+    isCalcolndoRotta = false;
     notifyListeners();
   }
 
