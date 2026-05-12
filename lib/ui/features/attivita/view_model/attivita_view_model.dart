@@ -131,8 +131,6 @@ class AttivitaViewModel extends ChangeNotifier {
       inCorso = true;
       _oraDiInizio = DateTime.now(); // Per il conteggio immune al background
 
-      //await audioGuideService.parla("Attività avviata. Iniziamo!");
-
       _inizioCronometro();
       _ascoltaPosizione();
       notifyListeners();
@@ -176,7 +174,11 @@ class AttivitaViewModel extends ChangeNotifier {
         if (tracciaGps.isNotEmpty) {
           final ultimoPunto = tracciaGps.last;
           final distanza = LocationUtils.calcolaDistanza(ultimoPunto, punto);
-          kmPercorsi += distanza;
+          if (distanza < 50) {
+            kmPercorsi += distanza;
+          } else {
+            print("[VIEWMODEL] Distanza anomala ignorata: $distanza metri");
+          }
         }
         tracciaGps.add(punto);
 
@@ -196,22 +198,56 @@ class AttivitaViewModel extends ChangeNotifier {
       velocitaAttuale = kmPercorsi / (durata.inSeconds / 3600.0);
     }
 
+    // Annuncio ogni KM completato
     int kmInteri = kmPercorsi.floor();
     if (kmInteri > _ultimoKmAnnunciato) {
       _ultimoKmAnnunciato = kmInteri;
-      audioManager.parla(
-        "Chilometro $kmInteri completato. Velocità media, ${velocitaAttuale.toStringAsFixed(1)} chilometri orari.",
-      );
+      if (tracciaGps.isNotEmpty) {
+        LatLng puntoAttuale = LatLng(
+          tracciaGps.last.latitude,
+          tracciaGps.last.longitude,
+        );
+        _mindfulness
+            .generaFraseMotivazionale(
+              kmInteri,
+              puntoAttuale,
+              luogoVicinoAttuale ?? "in questo ambiente",
+            )
+            .then((frase) {
+              audioManager.parla(frase);
+            });
+      }
     }
 
     int minutiAttuali = durata.inMinutes;
+
+    // esercizio di respirazione ogni 5 minuti, molto più discreto e rilassante
     if (minutiAttuali > 0 &&
-        minutiAttuali % 10 == 0 &&
-        minutiAttuali > _ultimoMinutoAnnunciato) {
+        minutiAttuali % 5 == 0 &&
+        minutiAttuali != _ultimoMinutoAnnunciato) {
       _ultimoMinutoAnnunciato = minutiAttuali;
-      audioManager.parla(
-        "Sei in cammino da $minutiAttuali minuti. Hai percorso ${kmPercorsi.toStringAsFixed(1)} chilometri.",
-      );
+      if (tracciaGps.isNotEmpty) {
+        LatLng puntoAttuale = LatLng(
+          tracciaGps.last.latitude,
+          tracciaGps.last.longitude,
+        );
+        if (tracciaGps.isNotEmpty) {
+          LatLng puntoAttuale = LatLng(
+            tracciaGps.last.latitude,
+            tracciaGps.last.longitude,
+          );
+
+          _mindfulness
+              .generaEsercizioRespirazione(
+                velocitaAttuale,
+                puntoAttuale,
+                luogoVicinoAttuale ?? "in questo ambiente",
+              )
+              .then((frase) {
+                audioManager.parla(frase);
+              });
+        }
+      }
     }
   }
 
@@ -233,7 +269,14 @@ class AttivitaViewModel extends ChangeNotifier {
 
       if (luogo != null) {
         luogoVicinoAttuale = luogo;
-        String frase = await _mindfulness.generaFrasePerPOI(luogo);
+        LatLng posizioneLatLng = LatLng(
+          posizione.latitude,
+          posizione.longitude,
+        );
+        String frase = await _mindfulness.generaFrasePerPOI(
+          luogo,
+          posizioneLatLng,
+        );
         await audioManager.parla(frase);
         notifyListeners();
       }

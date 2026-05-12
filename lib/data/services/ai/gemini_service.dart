@@ -9,7 +9,7 @@ class GeminiService {
   GeminiService() {
     // Si aggancia automaticamente a Firebase tramite il provider Gemini Developer API
     _model = FirebaseAI.googleAI().generativeModel(
-      model: 'gemini-3-flash-preview',
+      model: 'gemini-3.1-flash-lite',
     );
   }
 
@@ -69,6 +69,84 @@ class GeminiService {
       }
     } catch (e) {
       print("[GEMINI SERVICE] Errore Generazione AI: $e");
+    }
+    return null;
+  }
+
+  Future<String?> generaFraseMindful(String nomePoi, LatLng posizione) async {
+    final prompt =
+        '''
+    Sei una guida spirituale e di cammino consapevole. L'utente si trova presso: "$nomePoi" (Coordinate: ${posizione.latitude}, ${posizione.longitude}).
+    Scrivi un pensiero profondo di circa 30-40 parole. 
+    Non limitarti a descrivere il luogo: invita l'utente a connettere ciò che vede con il proprio stato interiore.
+    Usa le coordinate per descrivere l'ambiente circostante a la visione che si ha del punto di interesse $nomePoi.
+    Usa un tono calmo, poetico e filosofico. Esplora la percezione del corpo nel luogo.
+    Mensiona sempre il nome del punto di interesse per creare un legame tra ambiente e mente.
+    IMPORTANTE: Scrivi solo il testo puro per il sintetizzatore vocale, senza formattazioni o emoji.
+    REGOLA FONDAMENTALE: Usa le coordinate SOLO per capire l'area geografica in cui si trova l'utente. ASSOLUTAMENTE NON scrivere, pronunciare o menzionare mai i numeri delle coordinate nel testo finale.
+    ''';
+
+    try {
+      final response = await _model.generateContent([Content.text(prompt)]);
+      return response.text?.replaceAll(RegExp(r'[*_~`]'), '')?.trim();
+    } catch (e) {
+      print("[GEMINI SERVICE] Errore generazione frase mindful: $e");
+    }
+    return null;
+  }
+
+  Future<String?> generaEsercizioRespirazione(
+    String statoPasso,
+    LatLng posizione,
+    String nomePoi,
+  ) async {
+    final contestoLuogo = nomePoi != null
+        ? "vicino al punto di interesse $nomePoi"
+        : "in questo ambiente";
+    final prompt =
+        '''
+    Sei una guida di mindfulness. L'utente sta camminando con un passo $statoPasso $contestoLuogo (Posizione: ${posizione.latitude}, ${posizione.longitude}).
+    Genera un esercizio di respirazione e consapevolezza di circa 30 parole.
+    Collega l'atto del respirare con l'ambiente circostante e la sensazione del movimento nelle gambe. 
+    Aiuta l'utente a sentirsi presente nel qui ed ora.
+     Usa le coordinate per descrivere l'ambiente circostante a la visione che si ha del punto di interesse $nomePoi.
+    Usa un tono calmo, poetico e filosofico. Esplora la percezione del corpo nel luogo.
+    Mensiona sempre il nome del punto di interesse per creare un legame tra ambiente e mente.
+    IMPORTANTE: Scrivi solo il testo puro, niente markdown.
+    REGOLA FONDAMENTALE: Usa le coordinate SOLO per capire l'area geografica in cui si trova l'utente. ASSOLUTAMENTE NON scrivere, pronunciare o menzionare mai i numeri delle coordinate nel testo finale.
+    ''';
+
+    try {
+      final response = await _model.generateContent([Content.text(prompt)]);
+      return response.text?.replaceAll(RegExp(r'[*_~`]'), '')?.trim();
+    } catch (e) {
+      print("[GEMINI SERVICE] Errore generazione esercizio respirazione: $e");
+    }
+    return null;
+  }
+
+  Future<String?> generaFraseMotivazionale(
+    int kmPercorsi,
+    LatLng posizione,
+    String nomePoi,
+  ) async {
+    final contestoLuogo = nomePoi != null
+        ? "vicino al punto di interesse $nomePoi"
+        : "in questo ambiente";
+    final prompt =
+        '''
+   'L' utente ha completato il chilometro numero $kmPercorsi $contestoLuogo (Posizione attuale: ${posizione.latitude}, ${posizione.longitude}).
+    Scrivi una riflessione di circa 35 parole sulla costanza e sulla trasformazione che avviene nel corpo e nella mente dopo questa distanza.
+    Parla del paesaggio come di uno specchio dell'anima. Rendi il traguardo fisico un'esperienza sensoriale e introspettiva.
+    IMPORTANTE: Scrivi solo il testo puro.
+    REGOLA FONDAMENTALE: Usa le coordinate SOLO per capire l'area geografica in cui si trova l'utente. ASSOLUTAMENTE NON scrivere, pronunciare o menzionare mai i numeri delle coordinate nel testo finale.
+    ''';
+
+    try {
+      final response = await _model.generateContent([Content.text(prompt)]);
+      return response.text?.replaceAll(RegExp(r'[*_~`]'), '')?.trim();
+    } catch (e) {
+      print("[GEMINI SERVICE] Errore generazione frase motivazionale: $e");
     }
     return null;
   }

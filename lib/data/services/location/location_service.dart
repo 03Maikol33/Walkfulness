@@ -14,24 +14,31 @@ class LocationTaskHandler extends TaskHandler {
 
   @override
   Future<void> onStart(DateTime timestamp, TaskStarter starter) async {
-    // IMPORTANTE: Aggiungi un piccolo delay PRIMA di iniziare lo streaming
-    // Questo garantisce che il main thread abbia tempo di registrare il callback
     await Future.delayed(const Duration(milliseconds: 300));
 
     final locationSettings = AndroidSettings(
-      accuracy: LocationAccuracy.high,
-      distanceFilter: 3,
-      forceLocationManager: true,
-      timeLimit: const Duration(seconds: 10), // timeout per ogni lettura
-      intervalDuration: const Duration(milliseconds: 1000),
+      accuracy: LocationAccuracy.best,
+      distanceFilter: 2,
+      //forceLocationManager: true, altrimenti usa il fused location che a volte viene spento in background
+      //timeLimit: const Duration(seconds: 10), // timeout per ogni lettura
+      intervalDuration: const Duration(seconds: 2),
     );
 
     // Prima lettura immediata
     try {
       print("[ISOLATE] Tentativo getCurrentPosition...");
-      final initialPos = await Geolocator.getCurrentPosition(
-        locationSettings: locationSettings,
-      );
+      final initialPos =
+          await Geolocator.getCurrentPosition(
+            locationSettings: locationSettings,
+          ).timeout(
+            const Duration(seconds: 5),
+            onTimeout: () {
+              print(
+                "[ISOLATE] getCurrentPosition in timeout, passo allo stream continuo.",
+              );
+              throw Exception("Timeout lettura iniziale");
+            },
+          );
 
       print(
         "[ISOLATE] Posizione iniziale trovata: ${initialPos.latitude}, ${initialPos.longitude}",

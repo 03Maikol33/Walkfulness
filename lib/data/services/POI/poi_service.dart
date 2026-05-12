@@ -12,46 +12,41 @@ class PoiService {
     print('[POI SERVICE]: Lista dei POI annunciati resettata');
   }
 
-  // Cerca parchi, boschi o siti storici in un raggio di 500 metri
   Future<String?> trovaLuogoNaturaleVicino(GeoPoint posizione) async {
     if (_ultimoAnnuncio != null &&
-        DateTime.now().difference(_ultimoAnnuncio!) < Duration(minutes: 3)) {
-      print(
-        '[POI SERVICE]: Ultimo annuncio troppo recente, salto controllo POI',
-      );
-      return null; // Evita di cercare troppo spesso
+        DateTime.now().difference(_ultimoAnnuncio!) <
+            const Duration(minutes: 3)) {
+      return null;
     }
     final lat = posizione.latitude;
     final lng = posizione.longitude;
-    final raggio = 10;
+    final raggio = 20;
 
     print(
       '[POI SERVICE]: Controllo POI vicino a ($lat, $lng) con raggio $raggio metri',
     );
 
-    // Query nel linguaggio Overpass QL
     final query =
         '''
       [out:json];
       (
-        nwr["leisure"="park"](around:$raggio, $lat, $lng);
-        nwr["natural"~"wood|beach|water"](around:$raggio, $lat, $lng);
         nwr["historic"](around:$raggio, $lat, $lng);
-        nwr["amenity"~"fountain|place_of_worship"](around:$raggio, $lat, $lng);
         nwr["tourism"~"museum|viewpoint|artwork|attraction"](around:$raggio, $lat, $lng);
+        nwr["amenity"~"fountain|place_of_worship"](around:$raggio, $lat, $lng);
+        nwr["natural"~"wood|beach|water|peak"](around:$raggio, $lat, $lng);
+        nwr["leisure"="park"](around:$raggio, $lat, $lng);
       );
       out tags; 
-    '''; // Prende solo il più vicino
+    ''';
 
     final url = Uri.parse('https://overpass-api.de/api/interpreter');
 
     try {
-      // Aggiungiamo gli HEADERS per farci accettare dal server
       final response = await http.post(
         url,
         headers: {
-          'Accept': 'application/json', // Risolve l'errore 406!
-          'User-Agent': 'WalkfulnessApp/1.0', // Buona norma per API gratuite
+          'Accept': 'application/json',
+          'User-Agent': 'WalkfulnessApp/1.0',
         },
         body: {'data': query},
       );
@@ -63,27 +58,62 @@ class PoiService {
         print(
           '[POI SERVICE]: Risposta Overpass: ${elements.length} elementi trovati',
         );
+
         if (elements.isNotEmpty) {
-          // Cerchiamo il primo che ha un nome
           for (var el in elements) {
-            if (el['tags'] != null && el['tags']['name'] != null) {
-              if (giaAnnunciati.contains(el['tags']['name'])) continue;
-              final nome = el['tags']['name'];
-              print('[POI] TROVATO : $nome');
-              giaAnnunciati.add(nome);
-              _ultimoAnnuncio = DateTime.now();
-              return nome;
+            if (el['tags'] != null) {
+              String? nome = el['tags']['name'];
+              if (nome != null && !giaAnnunciati.contains(nome)) {
+                print('[POI] TROVATO CON NOME : $nome');
+                giaAnnunciati.add(nome);
+                _ultimoAnnuncio = DateTime.now();
+                return nome;
+              }
+            }
+          }
+
+          // FALLBACK SUI NOMI GENERICI ---
+          //gli elementi trovati prima nessuno aveva un nome proprio.
+          for (var el in elements) {
+            if (el['tags'] != null) {
+              String? nomeGenerico;
+
+              final historic = el['tags']['historic'];
+              final tourism = el['tags']['tourism'];
+              final natural = el['tags']['natural'];
+              final leisure = el['tags']['leisure'];
+              final amenity = el['tags']['amenity'];
+
+              if (historic == 'monument' ||
+                  historic == 'castle' ||
+                  historic == 'ruins') {
+                nomeGenerico = "un monumento storico";
+              } else if (tourism == 'artwork') {
+                nomeGenerico = "un'opera d'arte";
+              } else if (natural == 'beach') {
+                nomeGenerico = "la spiaggia";
+              } else if (leisure == 'park') {
+                nomeGenerico = "un'area verde";
+              } else if (natural == 'water') {
+                nomeGenerico = "uno specchio d'acqua";
+              } else if (amenity == 'fountain') {
+                nomeGenerico = "una fontana";
+              }
+
+              if (nomeGenerico != null &&
+                  !giaAnnunciati.contains(nomeGenerico)) {
+                print('[POI] TROVATO GENERICO : $nomeGenerico');
+                giaAnnunciati.add(nomeGenerico);
+                _ultimoAnnuncio = DateTime.now();
+                return nomeGenerico;
+              }
             }
           }
         }
-      } else {
-        print(
-          '[POI SERVICE]: Errore Overpass: ${response.statusCode} - ${response.reasonPhrase}',
-        );
       }
     } catch (e) {
       print('[POI SERVICE]: Errore API Overpass: $e');
     }
-    return null; // Nessun poi trovato
+    return null;
   }
 }
