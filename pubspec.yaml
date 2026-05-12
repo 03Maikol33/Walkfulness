@@ -50,6 +50,7 @@ dependencies:
 
   uuid: any
   flutter_native_splash: ^2.4.7
+  firebase_ai: 3.10.0
 dev_dependencies:
   flutter_test:
     sdk: flutter

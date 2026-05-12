@@ -66,11 +66,18 @@ class _CreaTuViewState extends State<CreaTuView>
       ).arguments;
     }
 
-    //se ha trovato il percorso in uno dei due modi lo carica
+    //cerca il percorso da modificare
     if (args != null && args is PercorsoModel) {
       // microtask per evitare conflitti mentre Flutter sta disegnando l'interfaccia
       Future.microtask(() {
         _viewModel.caricaPercorsoEsistente(args as PercorsoModel);
+      });
+    }
+
+    //vede se ha ricevuto un percorso dall'ai
+    if (args != null && args is List<PinModel>) {
+      Future.microtask(() {
+        _viewModel.caricaPercorsoGenerato(args as List<PinModel>);
       });
     }
   }

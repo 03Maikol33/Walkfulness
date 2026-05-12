@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:walkfulness/ui/core/widgets/action_card.dart';
 import 'package:walkfulness/ui/features/attivita/view/attivita_view.dart';
 import 'package:walkfulness/ui/features/crea_tu/view/crea_tu_view.dart';
+import 'package:walkfulness/ui/features/genera_con_ai/view/genera_con_ai_view.dart';
 import 'package:walkfulness/ui/features/main_wrapper/view_model/main_wrapper_view_model.dart';
 import 'package:walkfulness/ui/features/miei_percorsi/view/miei_percorsi_view.dart';
 import 'package:walkfulness/ui/features/percorsi_community/view/percorsi_community_view.dart';
@@ -52,7 +53,11 @@ class CreaView extends StatelessWidget {
                     title: "Genera con AI",
                     subtitle: "Creato sul tuo stato d'animo",
                     icon: Icons.auto_awesome,
-                    onTap: () {}, // Funzione vuota corretta
+                    onTap: () {
+                      context.read<MainWrapperViewModel>().apriPaginaInterna(
+                        const GeneraConAiView(),
+                      );
+                    }, // Funzione vuota corretta
                     colorOverride: theme.colorScheme.secondary,
                   ),
                 ),

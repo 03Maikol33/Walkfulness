@@ -34,6 +34,9 @@ class CreaTuViewModel extends ChangeNotifier {
   bool isCalcolndoRotta = false;
   bool get isCalcolandoRotta => isCalcolndoRotta;
 
+  bool _isDisposed = false;
+  bool get isDisposed => _isDisposed;
+
   LatLng? posizioneUtente;
   StreamSubscription<Position>? _positionSubscription;
 
@@ -60,7 +63,18 @@ class CreaTuViewModel extends ChangeNotifier {
     _aggiornaInterfaccia();
   }
 
+  void caricaPercorsoGenerato(List<PinModel> pinsGenerati) {
+    pinSelezionati.clear();
+    pinSelezionati.addAll(pinsGenerati);
+    _aggiornaInterfaccia();
+
+    if (pinSelezionati.isNotEmpty && !_isDisposed) {
+      mapController.move(pinSelezionati.first.coordinate, 14.0);
+    }
+  }
+
   Future<void> _inizializzaPosizioneUtente() async {
+    if (isDisposed) return;
     bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) return;
 
@@ -384,6 +398,7 @@ class CreaTuViewModel extends ChangeNotifier {
   void dispose() {
     _positionSubscription?.cancel();
     mapController.dispose();
+    _isDisposed = true;
     super.dispose();
   }
 }
