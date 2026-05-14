@@ -1,0 +1,733 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>La tua foresta — Walkfulness</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: #0d1f0e;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    overflow-x: hidden;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  #sky {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    background: linear-gradient(to bottom, #0a1628 0%, #1a2d4a 40%, #2d5a3d 75%, #1a3d22 100%);
+  }
+
+  .stars {
+    position: fixed;
+    inset: 0;
+    z-index: 1;
+  }
+
+  #ui {
+    position: relative;
+    z-index: 10;
+    width: 100%;
+    max-width: 480px;
+    padding: 28px 20px 0;
+    text-align: center;
+  }
+
+  .app-name {
+    font-size: 12px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.35);
+    margin-bottom: 6px;
+  }
+
+  .level-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 24px;
+    padding: 6px 16px;
+    margin-bottom: 12px;
+  }
+
+  .level-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: #6ee87a;
+    box-shadow: 0 0 8px #6ee87a;
+  }
+
+  .level-text {
+    font-size: 13px;
+    font-weight: 600;
+    color: rgba(255,255,255,0.9);
+    letter-spacing: 0.5px;
+  }
+
+  .forest-title {
+    font-size: 26px;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 4px;
+  }
+
+  .forest-subtitle {
+    font-size: 14px;
+    color: rgba(255,255,255,0.5);
+    margin-bottom: 20px;
+  }
+
+  .progress-wrap {
+    background: rgba(255,255,255,0.07);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 16px;
+    padding: 14px 18px;
+    margin-bottom: 24px;
+    text-align: left;
+  }
+
+  .progress-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+  }
+
+  .progress-label {
+    font-size: 12px;
+    color: rgba(255,255,255,0.5);
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+  }
+
+  .progress-numbers {
+    font-size: 13px;
+    font-weight: 600;
+    color: rgba(255,255,255,0.85);
+  }
+
+  .progress-bar-bg {
+    width: 100%;
+    height: 6px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+
+  .progress-bar-fill {
+    height: 100%;
+    background: linear-gradient(to right, #4ade80, #86efac);
+    border-radius: 3px;
+    transition: width 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .trees-row {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-bottom: 6px;
+  }
+
+  .tree-chip {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(255,255,255,0.07);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 20px;
+    padding: 5px 12px;
+    font-size: 12px;
+    color: rgba(255,255,255,0.65);
+  }
+
+  .chip-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+  }
+
+  #forest-canvas {
+    position: relative;
+    z-index: 5;
+    width: 100%;
+    max-width: 520px;
+    display: block;
+  }
+
+  .fog {
+    position: fixed;
+    bottom: 0;
+    left: 0; right: 0;
+    height: 120px;
+    background: linear-gradient(to top, #0d1f0e, transparent);
+    z-index: 6;
+    pointer-events: none;
+  }
+
+  .empty-state {
+    position: relative;
+    z-index: 10;
+    text-align: center;
+    padding: 60px 20px;
+    color: rgba(255,255,255,0.4);
+  }
+
+  .empty-state .icon { font-size: 48px; margin-bottom: 16px; }
+  .empty-state p { font-size: 15px; line-height: 1.6; }
+
+  @keyframes sway {
+    0%,100% { transform-origin: bottom center; transform: rotate(-1.5deg); }
+    50% { transform-origin: bottom center; transform: rotate(1.5deg); }
+  }
+
+  @keyframes twinkle {
+    0%,100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+</style>
+</head>
+<body>
+
+<div id="sky"></div>
+<canvas class="stars" id="stars-canvas"></canvas>
+
+<div id="ui">
+  <p class="app-name">Walkfulness</p>
+  <div class="level-badge">
+    <div class="level-dot"></div>
+    <span class="level-text" id="level-label">Livello 1</span>
+  </div>
+  <h1 class="forest-title" id="forest-title">La tua foresta</h1>
+  <p class="forest-subtitle" id="forest-sub">Ogni passo pianta un albero</p>
+
+  <div class="progress-wrap">
+    <div class="progress-row">
+      <span class="progress-label">Progresso livello</span>
+      <span class="progress-numbers" id="progress-numbers">0 / 10</span>
+    </div>
+    <div class="progress-bar-bg">
+      <div class="progress-bar-fill" id="progress-fill" style="width:0%"></div>
+    </div>
+  </div>
+
+  <div class="trees-row" id="trees-chips"></div>
+</div>
+
+<canvas id="forest-canvas"></canvas>
+<div class="fog"></div>
+
+<script>
+const LEVEL_CONFIGS = [
+  { name: "Seme",        trees: 5,  color: "#4ade80", label: "I tuoi primi 5 passi",   treeName: "Alberelli" },
+  { name: "Germoglio",   trees: 10, color: "#86efac", label: "10 punti, il bosco nasce", treeName: "Arbusti" },
+  { name: "Boschetto",   trees: 15, color: "#22c55e", label: "La foresta cresce",       treeName: "Alberi giovani" },
+  { name: "Foresta",     trees: 20, color: "#16a34a", label: "Sei nel profondo verde",  treeName: "Pini" },
+  { name: "Selva",       trees: 30, color: "#15803d", label: "Una selva silenziosa",    treeName: "Abeti" },
+  { name: "Santuario",   trees: 40, color: "#166534", label: "Il tuo santuario verde",  treeName: "Querce" },
+  { name: "Primordiale", trees: 50, color: "#14532d", label: "Foresta primordiale",     treeName: "Sequoie" },
+];
+
+function getParams() {
+  const p = new URLSearchParams(window.location.search);
+  const level = Math.max(1, Math.min(7, parseInt(p.get('level')) || 1));
+  const progress = Math.max(0, Math.min(1, parseFloat(p.get('progress')) || 0));
+  return { level, progress };
+}
+
+function getLevelConfig(level) {
+  return LEVEL_CONFIGS[Math.min(level - 1, LEVEL_CONFIGS.length - 1)];
+}
+
+function getPreviousTreesTotal(level) {
+  let total = 0;
+  for (let i = 0; i < level - 1; i++) {
+    total += LEVEL_CONFIGS[Math.min(i, LEVEL_CONFIGS.length - 1)].trees;
+  }
+  return total;
+}
+
+const { level, progress } = getParams();
+const cfg = getLevelConfig(level);
+const previousTrees = getPreviousTreesTotal(level);
+const currentLevelTrees = Math.floor(cfg.trees * progress);
+const totalTrees = previousTrees + currentLevelTrees;
+
+document.getElementById('level-label').textContent = `Livello ${level} — ${cfg.name}`;
+document.getElementById('forest-title').textContent = `La tua foresta`;
+document.getElementById('forest-sub').textContent = cfg.label;
+document.getElementById('progress-numbers').textContent = `${currentLevelTrees} / ${cfg.trees} alberi`;
+document.getElementById('level-dot') && (document.querySelector('.level-dot').style.background = cfg.color);
+document.querySelector('.level-dot').style.boxShadow = `0 0 8px ${cfg.color}`;
+
+setTimeout(() => {
+  document.getElementById('progress-fill').style.width = (progress * 100).toFixed(1) + '%';
+}, 100);
+
+const chips = document.getElementById('trees-chips');
+if (previousTrees > 0) {
+  const c1 = document.createElement('div');
+  c1.className = 'tree-chip';
+  c1.innerHTML = `<div class="chip-dot" style="background:#86efac"></div> ${previousTrees} alberi dai livelli precedenti`;
+  chips.appendChild(c1);
+}
+if (currentLevelTrees > 0) {
+  const c2 = document.createElement('div');
+  c2.className = 'tree-chip';
+  c2.innerHTML = `<div class="chip-dot" style="background:${cfg.color}"></div> ${currentLevelTrees} ${cfg.treeName} questo livello`;
+  chips.appendChild(c2);
+}
+if (totalTrees === 0) {
+  const c3 = document.createElement('div');
+  c3.className = 'tree-chip';
+  c3.innerHTML = `<div class="chip-dot" style="background:#6b7280"></div> Inizia a camminare per piantare alberi`;
+  chips.appendChild(c3);
+}
+
+// --- Stars ---
+const sc = document.getElementById('stars-canvas');
+sc.width = window.innerWidth;
+sc.height = window.innerHeight;
+const sx = sc.getContext('2d');
+const stars = Array.from({length: 120}, () => ({
+  x: Math.random() * sc.width,
+  y: Math.random() * sc.height * 0.55,
+  r: Math.random() * 1.2 + 0.3,
+  phase: Math.random() * Math.PI * 2,
+  speed: Math.random() * 0.015 + 0.005
+}));
+
+function drawStars(t) {
+  sx.clearRect(0, 0, sc.width, sc.height);
+  stars.forEach(s => {
+    const alpha = 0.4 + 0.5 * Math.sin(s.phase + t * s.speed);
+    sx.beginPath();
+    sx.arc(s.x, s.y, s.r, 0, Math.PI*2);
+    sx.fillStyle = `rgba(255,255,240,${alpha.toFixed(2)})`;
+    sx.fill();
+  });
+}
+
+// --- Forest Canvas ---
+const fc = document.getElementById('forest-canvas');
+const fctx = fc.getContext('2d');
+
+const W = Math.min(window.innerWidth, 520);
+const H = Math.round(W * 1.1);
+fc.width = W;
+fc.height = H;
+fc.style.width = W + 'px';
+fc.style.height = H + 'px';
+
+const rng = (() => {
+  let seed = 42 + level * 137 + Math.floor(progress * 1000);
+  return () => {
+    seed = (seed * 1664525 + 1013904223) & 0xffffffff;
+    return (seed >>> 0) / 0xffffffff;
+  };
+})();
+
+function rngRange(a, b) { return a + rng() * (b - a); }
+
+// Tree types based on level
+function getTreeType(lvl) {
+  if (lvl <= 2) return 'pine_small';
+  if (lvl <= 3) return 'pine_medium';
+  if (lvl <= 4) return 'pine_large';
+  if (lvl <= 5) return 'fir';
+  if (lvl <= 6) return 'oak';
+  return 'sequoia';
+}
+
+function drawPineSmall(ctx, x, y, scale, age, sway) {
+  const h = 55 * scale;
+  const w = 28 * scale;
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(sway * 0.018);
+  const trunk_h = h * 0.18;
+  ctx.fillStyle = '#5c3d2e';
+  ctx.fillRect(-2*scale, -trunk_h, 4*scale, trunk_h);
+  const layers = 3;
+  for (let i = 0; i < layers; i++) {
+    const ly = -trunk_h - (i * (h * 0.28));
+    const lw = w * (1 - i * 0.28);
+    const lh = h * 0.32;
+    const green = age > 0.5 ? '#2d6a4f' : '#52b788';
+    const g = ctx.createLinearGradient(-lw/2, ly - lh, lw/2, ly);
+    g.addColorStop(0, i % 2 === 0 ? '#40916c' : '#52b788');
+    g.addColorStop(1, '#1b4332');
+    ctx.fillStyle = g;
+    ctx.beginPath();
+    ctx.moveTo(0, ly - lh);
+    ctx.lineTo(lw/2, ly);
+    ctx.lineTo(-lw/2, ly);
+    ctx.closePath();
+    ctx.fill();
+  }
+  ctx.restore();
+}
+
+function drawFir(ctx, x, y, scale, age, sway) {
+  const h = 80 * scale;
+  const w = 36 * scale;
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(sway * 0.012);
+  const trunk_h = h * 0.15;
+  ctx.fillStyle = '#4a2e1a';
+  ctx.fillRect(-2.5*scale, -trunk_h, 5*scale, trunk_h);
+  const layers = 5;
+  for (let i = 0; i < layers; i++) {
+    const ly = -trunk_h - (i * (h * 0.16));
+    const lw = w * (0.95 - i * 0.16);
+    const lh = h * 0.22;
+    const g = ctx.createLinearGradient(-lw/2, ly - lh, lw/2, ly);
+    g.addColorStop(0, i % 2 === 0 ? '#1a6b3a' : '#2d9b5a');
+    g.addColorStop(1, '#0d3b20');
+    ctx.fillStyle = g;
+    ctx.beginPath();
+    ctx.moveTo(0, ly - lh);
+    ctx.lineTo(lw/2, ly);
+    ctx.lineTo(-lw/2, ly);
+    ctx.closePath();
+    ctx.fill();
+    if (age > 0.3) {
+      ctx.fillStyle = 'rgba(200,255,200,0.07)';
+      ctx.beginPath();
+      ctx.moveTo(0, ly - lh);
+      ctx.lineTo(lw*0.3, ly - lh*0.4);
+      ctx.lineTo(-lw*0.3, ly - lh*0.4);
+      ctx.closePath();
+      ctx.fill();
+    }
+  }
+  ctx.restore();
+}
+
+function drawOak(ctx, x, y, scale, age, sway) {
+  const h = 70 * scale;
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(sway * 0.01);
+  const trunk_h = h * 0.38;
+  const trunk_w = 7 * scale;
+  ctx.fillStyle = '#3d2b1a';
+  ctx.beginPath();
+  ctx.moveTo(-trunk_w/2, 0);
+  ctx.bezierCurveTo(-trunk_w/2, -trunk_h*0.5, -trunk_w*0.3, -trunk_h*0.8, 0, -trunk_h);
+  ctx.bezierCurveTo(trunk_w*0.3, -trunk_h*0.8, trunk_w/2, -trunk_h*0.5, trunk_w/2, 0);
+  ctx.closePath();
+  ctx.fill();
+  const cr = h * 0.46;
+  const blobs = [
+    [0, -trunk_h, cr],
+    [-cr*0.5, -trunk_h - cr*0.3, cr*0.75],
+    [cr*0.5, -trunk_h - cr*0.25, cr*0.7],
+    [0, -trunk_h - cr*0.5, cr*0.65],
+  ];
+  blobs.forEach(([bx, by, br], idx) => {
+    const g = ctx.createRadialGradient(bx - br*0.2, by - br*0.2, 0, bx, by, br);
+    g.addColorStop(0, idx % 2 === 0 ? '#3a8c4e' : '#2d7a3e');
+    g.addColorStop(1, '#1a4d28');
+    ctx.fillStyle = g;
+    ctx.beginPath();
+    ctx.arc(bx, by, br, 0, Math.PI*2);
+    ctx.fill();
+  });
+  ctx.restore();
+}
+
+function drawSequoia(ctx, x, y, scale, age, sway) {
+  const h = 110 * scale;
+  const w = 30 * scale;
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(sway * 0.006);
+  const trunk_h = h * 0.12;
+  ctx.fillStyle = '#6b3d2e';
+  ctx.fillRect(-4*scale, -trunk_h, 8*scale, trunk_h);
+  const layers = 7;
+  for (let i = 0; i < layers; i++) {
+    const t = i / (layers - 1);
+    const ly = -trunk_h - (t * h * 0.85);
+    const lw = w * (1 - t * 0.55);
+    const lh = h * 0.17;
+    const g = ctx.createLinearGradient(-lw/2, ly - lh, lw/2, ly);
+    g.addColorStop(0, i % 2 === 0 ? '#0f4c1e' : '#1a6b2e');
+    g.addColorStop(1, '#0a2e12');
+    ctx.fillStyle = g;
+    ctx.beginPath();
+    ctx.moveTo(0, ly - lh);
+    ctx.lineTo(lw/2 * (1 + 0.1*Math.sin(i)), ly);
+    ctx.lineTo(-lw/2 * (1 + 0.1*Math.sin(i+1)), ly);
+    ctx.closePath();
+    ctx.fill();
+  }
+  ctx.restore();
+}
+
+function drawTree(ctx, x, y, scale, age, sway, lvl) {
+  const type = getTreeType(lvl);
+  switch(type) {
+    case 'pine_small': case 'pine_medium': drawPineSmall(ctx, x, y, scale, age, sway); break;
+    case 'pine_large': drawPineSmall(ctx, x, y, scale * 1.3, age, sway); break;
+    case 'fir': drawFir(ctx, x, y, scale, age, sway); break;
+    case 'oak': drawOak(ctx, x, y, scale, age, sway); break;
+    case 'sequoia': drawSequoia(ctx, x, y, scale, age, sway); break;
+  }
+}
+
+// Ground
+function drawGround(ctx, w, h, t) {
+  const gh = h * 0.22;
+  const gy = h - gh;
+  const g = ctx.createLinearGradient(0, gy, 0, h);
+  g.addColorStop(0, '#1a3d22');
+  g.addColorStop(0.4, '#142e1a');
+  g.addColorStop(1, '#0d1f0e');
+  ctx.fillStyle = g;
+  ctx.beginPath();
+  ctx.moveTo(0, gy + gh * 0.3);
+  for (let x = 0; x <= w; x += 8) {
+    const wave = Math.sin(x * 0.03 + t * 0.2) * 6 + Math.sin(x * 0.07 - t * 0.1) * 3;
+    ctx.lineTo(x, gy + wave);
+  }
+  ctx.lineTo(w, h);
+  ctx.lineTo(0, h);
+  ctx.closePath();
+  ctx.fill();
+
+  // Grass tufts
+  for (let i = 0; i < 40; i++) {
+    const gx = (i / 40) * w + rngRange(-8, 8);
+    const gy2 = gy + rngRange(-5, 8);
+    const sw = rngRange(0.5, 1);
+    ctx.strokeStyle = `rgba(${40 + Math.floor(rng()*30)},${100 + Math.floor(rng()*50)},${40 + Math.floor(rng()*20)},0.5)`;
+    ctx.lineWidth = 1;
+    for (let b = 0; b < 3; b++) {
+      const bx = gx + (b-1) * 3 * sw;
+      const len = rngRange(4, 10) * sw;
+      ctx.beginPath();
+      ctx.moveTo(bx, gy2);
+      ctx.quadraticCurveTo(bx + (b-1)*2, gy2 - len * 0.5, bx + (b-1)*1.5, gy2 - len);
+      ctx.stroke();
+    }
+  }
+}
+
+// Moon
+function drawMoon(ctx, w) {
+  const mx = w * 0.82, my = H * 0.1, mr = 22;
+  const g = ctx.createRadialGradient(mx - 5, my - 5, 2, mx, my, mr);
+  g.addColorStop(0, 'rgba(255,255,220,0.95)');
+  g.addColorStop(0.7, 'rgba(240,230,180,0.8)');
+  g.addColorStop(1, 'rgba(200,190,140,0)');
+  ctx.fillStyle = g;
+  ctx.beginPath();
+  ctx.arc(mx, my, mr, 0, Math.PI*2);
+  ctx.fill();
+  ctx.fillStyle = 'rgba(255,255,200,0.15)';
+  ctx.beginPath();
+  ctx.arc(mx, my, mr + 8, 0, Math.PI*2);
+  ctx.fill();
+}
+
+// Fireflies
+const fireflies = Array.from({length: Math.min(totalTrees * 2 + 5, 40)}, () => ({
+  x: rng() * W,
+  y: H * 0.3 + rng() * H * 0.5,
+  vx: (rng() - 0.5) * 0.4,
+  vy: (rng() - 0.5) * 0.3,
+  phase: rng() * Math.PI * 2,
+  speed: rng() * 0.04 + 0.02,
+  size: rng() * 1.5 + 0.8,
+  color: rng() > 0.3 ? '#b8ff8a' : '#ffffa0',
+}));
+
+function updateFireflies(t) {
+  fireflies.forEach(f => {
+    f.x += f.vx + Math.sin(t * 0.3 + f.phase) * 0.3;
+    f.y += f.vy + Math.cos(t * 0.2 + f.phase * 1.3) * 0.2;
+    if (f.x < 0) f.x = W;
+    if (f.x > W) f.x = 0;
+    if (f.y < H * 0.2) f.y = H * 0.8;
+    if (f.y > H * 0.92) f.y = H * 0.3;
+  });
+}
+
+function drawFireflies(ctx, t) {
+  if (totalTrees === 0) return;
+  fireflies.forEach(f => {
+    const alpha = 0.3 + 0.7 * Math.sin(f.phase + t * f.speed * 3);
+    if (alpha < 0.1) return;
+    const g = ctx.createRadialGradient(f.x, f.y, 0, f.x, f.y, f.size * 3);
+    g.addColorStop(0, f.color.replace(')', `,${alpha.toFixed(2)})`).replace('rgb', 'rgba').replace('#', 'rgba(').replace('rgba(', 'rgba(').replace('b8ff8a', '184,255,138').replace('ffffa0', '255,255,160'));
+    g.addColorStop(1, 'transparent');
+
+    const [r,g2,b] = f.color === '#b8ff8a' ? [184,255,138] : [255,255,160];
+    const grd = ctx.createRadialGradient(f.x, f.y, 0, f.x, f.y, f.size * 3.5);
+    grd.addColorStop(0, `rgba(${r},${g2},${b},${alpha.toFixed(2)})`);
+    grd.addColorStop(1, `rgba(${r},${g2},${b},0)`);
+    ctx.fillStyle = grd;
+    ctx.beginPath();
+    ctx.arc(f.x, f.y, f.size * 3.5, 0, Math.PI*2);
+    ctx.fill();
+
+    ctx.fillStyle = `rgba(255,255,255,${(alpha * 0.9).toFixed(2)})`;
+    ctx.beginPath();
+    ctx.arc(f.x, f.y, f.size * 0.6, 0, Math.PI*2);
+    ctx.fill();
+  });
+}
+
+// Tree placement
+function buildTreeList() {
+  const trees = [];
+  const groundY = H * (1 - 0.22);
+  const rows = 4;
+
+  function placeTrees(count, treeLevel, rowOffset) {
+    if (count <= 0) return;
+    const perRow = Math.ceil(count / rows);
+    let placed = 0;
+    for (let row = 0; row < rows && placed < count; row++) {
+      const rowFrac = (row + rowOffset) / (rows + rowOffset);
+      const baseY = groundY * (0.72 + rowFrac * 0.24);
+      const rowCount = Math.min(perRow, count - placed);
+      const spread = W * 0.9;
+      const startX = W * 0.05;
+      for (let i = 0; i < rowCount; i++) {
+        const baseX = startX + (i / Math.max(rowCount - 1, 1)) * spread;
+        const jitterX = (rng() - 0.5) * (spread / Math.max(rowCount, 2)) * 0.85;
+        const jitterY = (rng() - 0.5) * H * 0.04;
+        const depth = 1 - rowFrac;
+        const scaleBase = 0.55 + rowFrac * 0.45;
+        const scaleVar = rng() * 0.3 - 0.1;
+        trees.push({
+          x: baseX + jitterX,
+          y: baseY + jitterY,
+          scale: (scaleBase + scaleVar) * (0.7 + depth * 0.5),
+          age: rng(),
+          swayPhase: rng() * Math.PI * 2,
+          swaySpeed: rng() * 0.008 + 0.004,
+          level: treeLevel,
+          depth: rowFrac,
+        });
+        placed++;
+      }
+    }
+  }
+
+  // Draw previous levels' trees first (background)
+  const prevConfigs = [];
+  for (let l = 1; l < level; l++) {
+    const lc = getLevelConfig(l);
+    prevConfigs.push({ count: lc.trees, level: l });
+  }
+  let totalPrev = prevConfigs.reduce((s, c) => s + c.count, 0);
+  if (totalPrev > 0) {
+    placeTrees(totalPrev, Math.max(1, level - 1), 0);
+  }
+  // Current level trees
+  placeTrees(currentLevelTrees, level, 0.5);
+
+  // Sort by depth (y) for painter's algorithm
+  trees.sort((a, b) => a.y - b.y);
+  return trees;
+}
+
+const treeList = buildTreeList();
+
+// Mist / atmosphere
+function drawMist(ctx, t) {
+  for (let i = 0; i < 3; i++) {
+    const mx = Math.sin(t * 0.05 + i * 2.1) * W * 0.15 + W * (0.2 + i * 0.3);
+    const my = H * (0.72 + i * 0.05);
+    const mr = W * 0.4;
+    const g = ctx.createRadialGradient(mx, my, 0, mx, my, mr);
+    g.addColorStop(0, `rgba(100,200,130,0.04)`);
+    g.addColorStop(1, 'transparent');
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, W, H);
+  }
+}
+
+// Ambient particles
+const particles = totalTrees > 0 ? Array.from({length: 15}, () => ({
+  x: rng() * W,
+  y: H * 0.4 + rng() * H * 0.4,
+  size: rng() * 2 + 0.5,
+  speed: rng() * 0.3 + 0.1,
+  alpha: rng() * 0.3 + 0.05,
+  phase: rng() * Math.PI * 2,
+})) : [];
+
+function drawParticles(ctx, t) {
+  particles.forEach(p => {
+    p.y -= p.speed * 0.5;
+    p.x += Math.sin(t * 0.2 + p.phase) * 0.3;
+    if (p.y < H * 0.3) { p.y = H * 0.9; p.x = rng() * W; }
+    ctx.fillStyle = `rgba(200,255,180,${p.alpha.toFixed(2)})`;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.size, 0, Math.PI*2);
+    ctx.fill();
+  });
+}
+
+let lastT = 0;
+function render(ts) {
+  const t = ts / 1000;
+  const dt = t - lastT;
+  lastT = t;
+
+  // Stars
+  drawStars(t);
+
+  // Forest
+  fctx.clearRect(0, 0, W, H);
+
+  drawMoon(fctx, W);
+  drawMist(fctx, t);
+  drawGround(fctx, W, H, t);
+
+  treeList.forEach(tree => {
+    const sway = Math.sin(t * tree.swaySpeed * 6.28 + tree.swayPhase) * (1 + tree.depth * 0.5);
+    drawTree(fctx, tree.x, tree.y, tree.scale, tree.age, sway, tree.level);
+  });
+
+  if (totalTrees === 0) {
+    fctx.fillStyle = 'rgba(255,255,255,0.12)';
+    fctx.font = '15px -apple-system, sans-serif';
+    fctx.textAlign = 'center';
+    fctx.fillText('Inizia a camminare per vedere crescere la tua foresta', W/2, H * 0.5);
+  }
+
+  updateFireflies(t);
+  drawFireflies(fctx, t);
+  drawParticles(fctx, t);
+
+  requestAnimationFrame(render);
+}
+
+requestAnimationFrame(render);
+
+// Handle resize
+window.addEventListener('resize', () => {
+  sc.width = window.innerWidth;
+  sc.height = window.innerHeight;
+  stars.forEach(s => {
+    s.x = Math.random() * sc.width;
+    s.y = Math.random() * sc.height * 0.55;
+  });
+});
+</script>
+</body>
+</html>
