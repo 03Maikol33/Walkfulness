@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:walkfulness/ui/core/providers/user_provider.dart';
+import 'package:walkfulness/ui/features/attivita/view/attivita_view.dart';
 import 'package:walkfulness/ui/features/foresta_immersiva/view/foresta_immersiva_view.dart';
 import 'package:walkfulness/ui/features/main_wrapper/view_model/main_wrapper_view_model.dart';
+import 'package:walkfulness/ui/features/storico_attivita/view/storico_attivita_view.dart';
 import '../../../core/widgets/action_card.dart';
 import '../../../core/widgets/forest_card.dart';
 import '../view_model/foresta_view_model.dart';
@@ -91,15 +93,27 @@ class _ForestaViewState extends State<ForestaView> {
                         subtitle: "Cammina libero senza limiti",
                         icon: Icons.bolt,
                         isPrimary: true,
-                        onTap: () {},
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const AttivitaView(),
+                            ),
+                          );
+                        },
                       ),
                     ),
                     const SizedBox(width: 8),
-                    const Expanded(
+                    Expanded(
                       child: ActionCard(
                         title: "Storico attività",
                         subtitle: "Visualizza le tue attività passate",
                         icon: Icons.history,
+                        onTap: () {
+                          context
+                              .read<MainWrapperViewModel>()
+                              .apriPaginaInterna(const StoricoAttivitaView());
+                        },
                       ),
                     ),
                   ],

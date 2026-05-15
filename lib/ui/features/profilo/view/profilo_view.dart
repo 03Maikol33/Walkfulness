@@ -8,6 +8,7 @@ import 'package:walkfulness/ui/features/foresta_immersiva/view/foresta_immersiva
 import 'package:walkfulness/ui/features/main_wrapper/view_model/main_wrapper_view_model.dart';
 import 'package:walkfulness/ui/features/miei_percorsi/view/miei_percorsi_view.dart';
 import 'package:walkfulness/ui/features/profilo/view_model/profilo_view_model.dart';
+import 'package:walkfulness/ui/features/storico_attivita/view/storico_attivita_view.dart';
 
 class ProfiloView extends StatefulWidget {
   const ProfiloView({super.key});
@@ -146,10 +147,14 @@ class _ProfiloViewState extends State<ProfiloView> {
           // 4. VOCI DI MENU
           _buildMenuItem(
             context,
-            Icons.door_front_door_outlined,
-            "Impostazioni Digital Detox",
+            Icons.history,
+            "Storico Attività",
+            onTap: () {
+              context.read<MainWrapperViewModel>().apriPaginaInterna(
+                const StoricoAttivitaView(),
+              );
+            },
           ),
-          _buildMenuItem(context, Icons.history, "Storico Attività"),
           _buildMenuItem(
             context,
             Icons.map_outlined,
@@ -160,6 +165,7 @@ class _ProfiloViewState extends State<ProfiloView> {
               );
             },
           ),
+          _buildMenuItem(context, Icons.info_outline, "Informazioni"),
 
           const SizedBox(height: 40),
 
