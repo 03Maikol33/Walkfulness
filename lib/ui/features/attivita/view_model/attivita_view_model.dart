@@ -10,6 +10,8 @@ import 'package:walkfulness/data/services/location/location_service.dart';
 import 'package:walkfulness/data/services/location/location_service_base.dart';
 import 'package:walkfulness/data/services/location/location_utils.dart';
 import 'package:walkfulness/ui/core/providers/user_provider.dart';
+import 'package:walkfulness/ui/features/main_wrapper/view_model/main_wrapper_view_model.dart';
+import 'package:walkfulness/ui/features/questionario/view/questionario_view.dart';
 import '../../../../data/services/location/mock_location_service.dart';
 import '../../../../data/repositories/activity_repository.dart';
 import '../../../../domain/models/activity_model.dart';
@@ -117,6 +119,8 @@ class AttivitaViewModel extends ChangeNotifier {
   }
 
   Future<void> avviaAttivita() async {
+    inCorso = true;
+    notifyListeners();
     try {
       await _locationService.inizializza();
       await audioManager.inizializza();
@@ -128,7 +132,6 @@ class AttivitaViewModel extends ChangeNotifier {
         _poiService.inizializza();
       } catch (_) {}
 
-      inCorso = true;
       _oraDiInizio = DateTime.now(); // Per il conteggio immune al background
 
       _inizioCronometro();
@@ -136,6 +139,8 @@ class AttivitaViewModel extends ChangeNotifier {
       notifyListeners();
     } catch (e) {
       print('Errore inizializzazione: $e');
+      inCorso = false;
+      notifyListeners();
     }
   }
 
@@ -287,7 +292,7 @@ class AttivitaViewModel extends ChangeNotifier {
     }
   }
 
-  Future<void> fermaESalva(UserProvider userProvider) async {
+  Future<ActivityModel?> fermaESalva(UserProvider userProvider) async {
     inCorso = false;
     _timer?.cancel();
     await _locationSubscription?.cancel();
@@ -306,9 +311,22 @@ class AttivitaViewModel extends ChangeNotifier {
         percorsoOrigineId: percorsoOrigineId,
       );
 
-      await _activityRepository.salvaAttivita(nuovaAttivita);
+      final String activityId = await _activityRepository.salvaAttivita(
+        nuovaAttivita,
+      );
+
       await userProvider.caricaUtente(forceRefresh: true);
+      return ActivityModel(
+        id: activityId, // ORA POSSIAMO PASSARLO AL QUESTIONARIO
+        userId: user.uid,
+        km: kmPercorsi,
+        data: DateTime.now(),
+        durata: durata,
+        percorso: tracciaGps,
+        percorsoOrigineId: percorsoOrigineId,
+      );
     }
     notifyListeners();
+    return null;
   }
 }

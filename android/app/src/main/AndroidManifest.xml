@@ -15,7 +15,6 @@
         android:label="walkfulness"
         android:name="${applicationName}"
         android:icon="@mipmap/launcher_icon"
-        android:enableOnBackInvokeCallback="true"
         android:hardwareAccelerated="true">
         <activity
             android:name=".MainActivity"

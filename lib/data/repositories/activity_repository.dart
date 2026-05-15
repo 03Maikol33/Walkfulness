@@ -5,7 +5,7 @@ class ActivityRepository {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   // Salva l'attività e aggiorna i progressi dell'utente
-  Future<void> salvaAttivita(ActivityModel attivita) async {
+  Future<String> salvaAttivita(ActivityModel attivita) async {
     try {
       //garantisce che le operazioni vengano effettutate iun modo atomico
       WriteBatch batch = _firestore.batch(); //ottiene un batch
@@ -29,8 +29,21 @@ class ActivityRepository {
 
       // 4. Eseguiamo il batch
       await batch.commit();
+      return activityRef.id;
     } catch (e) {
       print("Errore nel salvataggio attività: $e");
+      rethrow;
+    }
+  }
+
+  Future<void> aggiornaQuestionario(
+    String activityId,
+    Map<String, dynamic> dati,
+  ) async {
+    try {
+      await _firestore.collection('activities').doc(activityId).update(dati);
+    } catch (e) {
+      print("Errore aggiornamento questionario: $e");
       rethrow;
     }
   }

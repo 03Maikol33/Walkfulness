@@ -6,6 +6,8 @@ import 'package:provider/provider.dart';
 import 'package:walkfulness/data/services/location/routing_service.dart';
 import 'package:walkfulness/domain/models/percorso_model.dart';
 import 'package:walkfulness/ui/core/providers/user_provider.dart';
+import 'package:walkfulness/ui/features/main_wrapper/view_model/main_wrapper_view_model.dart';
+import 'package:walkfulness/ui/features/questionario/view/questionario_view.dart';
 import '../view_model/attivita_view_model.dart';
 // IMPORTANTE: Importiamo il PinModel per poter leggere i dati in arrivo
 import 'package:walkfulness/ui/features/crea_tu/view_model/crea_tu_view_model.dart';
@@ -484,34 +486,64 @@ class _AttivitaViewState extends State<AttivitaView> {
   }
 
   void _mostraConfirmTermina(BuildContext context) {
+    bool isSalvando = false;
     showDialog(
       context: context,
+      barrierDismissible: false,
       builder: (BuildContext dialogContext) {
-        return AlertDialog(
-          title: const Text("Terminare l'attività?"),
-          content: const Text(
-            "Sei sicuro di voler terminare l'attività corrente?",
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(dialogContext),
-              child: const Text("Annulla"),
-            ),
-            TextButton(
-              onPressed: () async {
-                Navigator.pop(dialogContext);
-                final userProvider = Provider.of<UserProvider>(
-                  context,
-                  listen: false,
-                );
-                await _viewModel.fermaESalva(userProvider);
-                if (context.mounted) {
-                  Navigator.pop(context);
-                }
-              },
-              child: const Text("Termina", style: TextStyle(color: Colors.red)),
-            ),
-          ],
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              title: const Text("Terminare l'attività?"),
+              content: const Text(
+                "Sei sicuro di voler terminare l'attività corrente?",
+              ),
+              actions: [
+                TextButton(
+                  onPressed: isSalvando
+                      ? null
+                      : () => Navigator.pop(dialogContext),
+                  child: const Text("Annulla"),
+                ),
+                TextButton(
+                  onPressed: isSalvando
+                      ? null
+                      : () async {
+                          setDialogState(() => isSalvando = true);
+                          final userProvider = Provider.of<UserProvider>(
+                            context,
+                            listen: false,
+                          );
+                          final attivita = await _viewModel.fermaESalva(
+                            userProvider,
+                          );
+                          if (context.mounted && attivita != null) {
+                            Navigator.pop(dialogContext);
+                            Navigator.pop(context);
+
+                            context
+                                .read<MainWrapperViewModel>()
+                                .apriPaginaInterna(
+                                  QuestionarioView(attivita: attivita),
+                                );
+                          } else if (context.mounted) {
+                            setDialogState(() => isSalvando = false);
+                          }
+                        },
+                  child: isSalvando
+                      ? const SizedBox(
+                          width: 24,
+                          height: 24,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Text(
+                          "Termina",
+                          style: TextStyle(color: Colors.red),
+                        ),
+                ),
+              ],
+            );
+          },
         );
       },
     );

@@ -11,6 +11,10 @@ class ActivityModel {
   final String?
   percorsoOrigineId; // Opzionale: ID del percorso di origine se è stato creato da un percorso predefinito
 
+  final String? umoreFineAttivita;
+  final bool? percorsoHaRilassato;
+  final List<String>? elementiApprezzati;
+
   ActivityModel({
     this.id,
     required this.userId,
@@ -20,6 +24,9 @@ class ActivityModel {
     required this.percorso,
     this.meteo,
     this.percorsoOrigineId,
+    this.umoreFineAttivita,
+    this.percorsoHaRilassato,
+    this.elementiApprezzati,
   });
 
   // da oggetto a mappa siu Firestore
@@ -32,6 +39,9 @@ class ActivityModel {
       'percorso': percorso,
       'meteo': meteo,
       'percorsoOrigineId': percorsoOrigineId,
+      'umoreFineAttivita': umoreFineAttivita,
+      'percorsoHaRilassato': percorsoHaRilassato,
+      'elementiApprezzati': elementiApprezzati,
     };
   }
 
@@ -46,6 +56,9 @@ class ActivityModel {
       percorso: List<GeoPoint>.from(map['percorso'] ?? []),
       meteo: map['meteo'],
       percorsoOrigineId: map['percorsoOrigineId'],
+      umoreFineAttivita: map['umoreFineAttivita'],
+      percorsoHaRilassato: map['percorsoHaRilassato'],
+      elementiApprezzati: List<String>.from(map['elementiApprezzati'] ?? []),
     );
   }
 }
