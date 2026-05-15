@@ -99,6 +99,10 @@ flutter:
 
     - assets/html/foresta.html
 
+    - assets/audio/foresta.mp3
+    - assets/audio/pioggia.mp3
+    - assets/audio/mare.mp3
+
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
@@ -127,12 +131,12 @@ flutter:
   # see https://flutter.dev/to/font-from-package
 
 flutter_native_splash:
-  color: "#F8FAF9" # Il colore di sfondo chiaro della tua app
+  color: "#00452e" # Il colore di sfondo chiaro della tua app
   image: "assets/images/app_icon.png"
   android: true
   ios: true
   android_12:
-    color: "#F8FAF9"
+    color: "#00452e"
     image: "assets/images/app_icon.png"
 
 flutter_icons:

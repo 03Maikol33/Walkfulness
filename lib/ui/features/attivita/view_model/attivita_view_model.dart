@@ -43,6 +43,73 @@ class AttivitaViewModel extends ChangeNotifier {
 
   bool isVoceAttiva = true; // Per il toggle della guida vocale
   bool isAmbienteAttivo = false; // Per il toggle della musica ambientale
+  String? tracciaAttiva;
+  double volumeAmbientale = 0.4;
+
+  final List<Map<String, String>> tracceDisponibili = [
+    {'nome': 'Foresta', 'file': 'foresta.mp3'},
+    {'nome': 'Pioggia', 'file': 'pioggia.mp3'},
+    {'nome': 'Onde', 'file': 'mare.mp3'},
+  ];
+
+  void cambiaTraccia(String nomeFile) {
+    if (tracciaAttiva == nomeFile) {
+      // Se clicca sulla traccia già attiva, la spegne (Pausa)
+      audioManager.fermaSottofondo();
+      tracciaAttiva = null;
+    } else {
+      // Avvia la nuova traccia
+      audioManager.avviaSottofondoNaturale(nomeFile);
+      tracciaAttiva = nomeFile;
+    }
+    notifyListeners(); // Avvisa l'UI per accendere il pulsante
+  }
+
+  void toggleSuoniAmbientali() {
+    if (tracciaAttiva != null) {
+      audioManager.fermaSottofondo();
+      tracciaAttiva = null;
+    } else {
+      cambiaTraccia(
+        tracceDisponibili[0]['file']!,
+      ); // Avvia la prima traccia (Bosco)
+    }
+    notifyListeners();
+  }
+
+  // Tasto Avanti
+  void tracciaSuccessiva() {
+    if (tracciaAttiva == null) {
+      cambiaTraccia(tracceDisponibili[0]['file']!);
+      return;
+    }
+    int index = tracceDisponibili.indexWhere((t) => t['file'] == tracciaAttiva);
+    int nextIndex =
+        (index + 1) %
+        tracceDisponibili.length; // Passa alla successiva o riparte da zero
+    cambiaTraccia(tracceDisponibili[nextIndex]['file']!);
+  }
+
+  // Tasto Indietro
+  void tracciaPrecedente() {
+    if (tracciaAttiva == null) {
+      cambiaTraccia(tracceDisponibili.last['file']!);
+      return;
+    }
+    int index = tracceDisponibili.indexWhere((t) => t['file'] == tracciaAttiva);
+    int prevIndex =
+        (index - 1 + tracceDisponibili.length) % tracceDisponibili.length;
+    cambiaTraccia(tracceDisponibili[prevIndex]['file']!);
+  }
+
+  // Slider Volume
+  void cambiaVolume(double nuovoVolume) {
+    volumeAmbientale = nuovoVolume;
+    audioManager.impostaVolumeBase(
+      nuovoVolume,
+    ); // Comunica il nuovo volume al manager
+    notifyListeners();
+  }
 
   // Variabili per Background e Audio
   DateTime? _oraDiInizio;
@@ -151,7 +218,7 @@ class AttivitaViewModel extends ChangeNotifier {
   }
 
   //gestione del player
-  Future<void> toggleSuoniAmbientali() async {
+  /*Future<void> toggleSuoniAmbientali() async {
     isAmbienteAttivo = !isAmbienteAttivo;
     if (isAmbienteAttivo) {
       // Quando avrai il file .mp3, lo farai partire qui
@@ -162,7 +229,7 @@ class AttivitaViewModel extends ChangeNotifier {
       print("[AUDIO] Pausa Sottofondo Naturale");
     }
     notifyListeners();
-  }
+  }*/
 
   void _inizioCronometro() {
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {

@@ -335,25 +335,6 @@ class _AttivitaViewState extends State<AttivitaView> {
                 ],
               ),
             ),
-            TextButton(
-              onPressed: () {
-                _viewModel.toggleSuoniAmbientali();
-              },
-              child: Row(
-                children: [
-                  Icon(
-                    _viewModel.isAmbienteAttivo
-                        ? Icons.spatial_audio
-                        : Icons.spatial_audio_off,
-                    color: _viewModel.isAmbienteAttivo
-                        ? theme.colorScheme.primary
-                        : Colors.grey,
-                  ),
-                  const SizedBox(width: 8),
-                  const Text("Suoni Ambientali"),
-                ],
-              ),
-            ),
           ],
         ),
       ),
@@ -403,6 +384,18 @@ class _AttivitaViewState extends State<AttivitaView> {
   }
 
   Widget _buildPlayerCard(ThemeData theme) {
+    // 1. Trova il nome della traccia attualmente in riproduzione
+    String nomeTraccia = "Silenzio";
+    if (_viewModel.tracciaAttiva != null) {
+      final traccia = _viewModel.tracceDisponibili.firstWhere(
+        (t) => t['file'] == _viewModel.tracciaAttiva,
+        orElse: () => {"nome": "Sconosciuto"},
+      );
+      nomeTraccia = traccia['nome']!;
+    }
+
+    final isPlaying = _viewModel.tracciaAttiva != null;
+
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 24),
       padding: const EdgeInsets.all(24),
@@ -414,11 +407,16 @@ class _AttivitaViewState extends State<AttivitaView> {
         children: [
           const Text(
             "AUDIO AMBIENTALE",
-            style: TextStyle(fontSize: 10, color: Colors.black54),
+            style: TextStyle(
+              fontSize: 10,
+              color: Colors.black54,
+              fontWeight: FontWeight.bold,
+              letterSpacing: 1.2,
+            ),
           ),
           const SizedBox(height: 8),
           Text(
-            "Sussurri della Foresta",
+            nomeTraccia, // IL TESTO ORA È DINAMICO
             textAlign: TextAlign.center,
             style: GoogleFonts.notoSerif(
               fontSize: 20,
@@ -430,33 +428,48 @@ class _AttivitaViewState extends State<AttivitaView> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
-              const Icon(Icons.skip_previous, color: Colors.grey),
+              // TASTO PRECEDENTE
+              IconButton(
+                icon: const Icon(Icons.skip_previous, size: 32),
+                color: Colors.grey,
+                onPressed: () => _viewModel.tracciaPrecedente(),
+              ),
+
+              // TASTO PLAY / PAUSA
               GestureDetector(
                 onTap: () {
                   _viewModel.toggleSuoniAmbientali();
                 },
                 child: Container(
-                  padding: const EdgeInsets.all(12),
+                  padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
                     color: theme.colorScheme.primary,
                     shape: BoxShape.circle,
                   ),
                   child: Icon(
-                    _viewModel.isAmbienteAttivo
+                    isPlaying
                         ? Icons.pause
-                        : Icons.play_arrow,
+                        : Icons.play_arrow, // L'ICONA CAMBIA
                     color: Colors.white,
-                    size: 32,
+                    size: 36,
                   ),
                 ),
               ),
-              const Icon(Icons.skip_next, color: Colors.grey),
+
+              // TASTO SUCCESSIVA
+              IconButton(
+                icon: const Icon(Icons.skip_next, size: 32),
+                color: Colors.grey,
+                onPressed: () => _viewModel.tracciaSuccessiva(),
+              ),
             ],
           ),
           const SizedBox(height: 20),
+
+          // SLIDER DEL VOLUME
           Slider(
-            value: 0.4,
-            onChanged: (v) {},
+            value: _viewModel.volumeAmbientale, // LEGGE IL VOLUME DAL VIEWMODEL
+            onChanged: (v) => _viewModel.cambiaVolume(v),
             activeColor: theme.colorScheme.primary,
             inactiveColor: Colors.grey.shade300,
           ),

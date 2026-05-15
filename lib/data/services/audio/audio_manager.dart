@@ -7,6 +7,8 @@ class AudioManager {
   // Livello 1 (Musica Ambientale)
   final AudioPlayer _ambientPlayer = AudioPlayer();
 
+  double _volumeBase = 0.4;
+
   bool _isSpeaking = false;
 
   Future<void> inizializza() async {
@@ -22,11 +24,16 @@ class AudioManager {
   }
 
   // --- LAYER AMBIENTE ---
-  Future<void> avviaSottofondoNaturale(String assetPath) async {
-    // Esempio: assetPath = 'audio/foresta.mp3'
-    // Decommenta quando avrai i file audio reali nel progetto
-    // await _ambientPlayer.play(AssetSource(assetPath));
-    // await _ambientPlayer.setVolume(0.4); // Volume di base
+  Future<void> avviaSottofondoNaturale(String nomeFile) async {
+    await _ambientPlayer.setVolume(_volumeBase); // Volume di base morbido
+    await _ambientPlayer.play(AssetSource('audio/$nomeFile'));
+  }
+
+  void impostaVolumeBase(double volume) {
+    _volumeBase = volume;
+    if (!_isSpeaking) {
+      _ambientPlayer.setVolume(_volumeBase);
+    }
   }
 
   Future<void> fermaSottofondo() async {
@@ -39,11 +46,11 @@ class AudioManager {
 
     _isSpeaking = true;
     //Abbassa la musica ambientale
-    await _ambientPlayer.setVolume(0.1);
+    await _ambientPlayer.setVolume(_volumeBase * 0.2);
     //Fai parlare il TTS
     await _tts.parla(testo);
     //Rialza la musica ambientale
-    await _ambientPlayer.setVolume(0.4);
+    await _ambientPlayer.setVolume(_volumeBase);
     _isSpeaking = false;
   }
 
