@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:walkfulness/ui/core/providers/user_provider.dart';
+import 'package:walkfulness/ui/features/foresta_immersiva/view/foresta_immersiva_view.dart';
+import 'package:walkfulness/ui/features/main_wrapper/view_model/main_wrapper_view_model.dart';
 import '../../../core/widgets/action_card.dart';
 import '../../../core/widgets/forest_card.dart';
 import '../view_model/foresta_view_model.dart';
@@ -108,11 +110,13 @@ class _ForestaViewState extends State<ForestaView> {
 
               // 3. SEZIONE FORESTA (Card replicata per coerenza)
               ForestCard(
-                livello:
-                    utente?.livelloCalcolato ?? 1, // Usa utente dal provider
-                percentuale:
-                    utente?.percentualeLivello.toInt() ??
-                    0, // Usa utente dal provider
+                livello: utente.livelloCalcolato,
+                percentuale: utente.percentualeLivello.toInt(),
+                onTap: () {
+                  context.read<MainWrapperViewModel>().apriPaginaInterna(
+                    const ForestaImmersivaView(),
+                  );
+                },
               ),
             ],
           ),

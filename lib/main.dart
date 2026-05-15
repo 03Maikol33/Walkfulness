@@ -24,7 +24,7 @@ void main() async {
         ChangeNotifierProvider(create: (_) => UserProvider()),
         ChangeNotifierProvider(
           create: (_) => MainWrapperViewModel(),
-        ), // Ora è globale!
+        ),
       ],
       child: const MyApp(),
     ),

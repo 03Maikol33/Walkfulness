@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:walkfulness/ui/core/providers/user_provider.dart';
 import 'package:walkfulness/ui/core/widgets/forest_card.dart';
+import 'package:walkfulness/ui/features/foresta_immersiva/view/foresta_immersiva_view.dart';
 import 'package:walkfulness/ui/features/main_wrapper/view_model/main_wrapper_view_model.dart';
 import 'package:walkfulness/ui/features/miei_percorsi/view/miei_percorsi_view.dart';
 import 'package:walkfulness/ui/features/profilo/view_model/profilo_view_model.dart';
@@ -133,6 +134,11 @@ class _ProfiloViewState extends State<ProfiloView> {
           ForestCard(
             livello: utente.livelloCalcolato,
             percentuale: utente.percentualeLivello.toInt(),
+            onTap: () {
+              context.read<MainWrapperViewModel>().apriPaginaInterna(
+                const ForestaImmersivaView(),
+              );
+            },
           ),
 
           const SizedBox(height: 32),
