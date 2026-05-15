@@ -289,10 +289,8 @@ class _CreaTuViewState extends State<CreaTuView>
                               isDettaglio
                                   ? "Dettagli percorso"
                                   : "Crea percorso",
-                              style: theme.textTheme.headlineMedium?.copyWith(
-                                fontWeight: FontWeight.bold,
-                                color: cyanPrimary,
-                                fontSize: 22,
+                              style: theme.textTheme.headlineLarge?.copyWith(
+                                color: const Color(0xFF012D1C),
                               ),
                             ),
                           ],

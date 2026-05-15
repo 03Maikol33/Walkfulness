@@ -51,7 +51,18 @@ class _MieiPercorsiViewState extends State<MieiPercorsiView> {
             iconTheme: const IconThemeData(color: Color(0xFF012D1C)),
           ),*/
           body: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              SizedBox(height: 16),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Text(
+                  "I Miei Percorsi",
+                  style: theme.textTheme.headlineLarge?.copyWith(
+                    color: const Color(0xFF012D1C),
+                  ),
+                ),
+              ),
               // Lista
               Expanded(child: _buildContent(_viewModel)),
               // filtro (Pubblici / Privati)

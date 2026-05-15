@@ -57,10 +57,8 @@ class _PercorsiCommunityViewState extends State<PercorsiCommunityView> {
             padding: const EdgeInsets.fromLTRB(4, 10, 4, 10),
             child: Text(
               "Esplora la\nCommunity",
-              style: theme.textTheme.headlineMedium?.copyWith(
-                fontWeight: FontWeight.bold,
+              style: theme.textTheme.headlineLarge?.copyWith(
                 color: const Color(0xFF012D1C),
-                height: 1.2,
               ),
             ),
           );
