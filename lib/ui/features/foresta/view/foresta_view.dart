@@ -28,126 +28,170 @@ class _ForestaViewState extends State<ForestaView> {
 
   @override
   Widget build(BuildContext context) {
+    // La pagina principale ora è totalmente STATICA!
+    // Nessun Provider.of in ascolto globale, nessun ListenableBuilder gigante.
+    return SingleChildScrollView(
+      padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 20.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // 1. INTENTO GIORNALIERO (Ascolta il ForestaViewModel)
+          QuoteWidget(viewModel: _viewModel),
+
+          const SizedBox(height: 32),
+
+          // 2. AZIONI (Totalmente statiche, non ascoltano nulla)
+          const ActionCardsWidget(),
+
+          const SizedBox(height: 24),
+
+          // 3. SEZIONE FORESTA (Ascolta il UserProvider tramite Consumer)
+          const UserForestWidget(),
+        ],
+      ),
+    );
+  }
+}
+
+// ============================================================================
+// WIDGET ESTRATTI E OTTIMIZZATI CON ASCOLTO GRANULARE
+// ============================================================================
+
+class QuoteWidget extends StatelessWidget {
+  final ForestaViewModel viewModel;
+
+  const QuoteWidget({super.key, required this.viewModel});
+
+  @override
+  Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    // Recupero l'utente loggato grazie al provider
-    final userProvider = Provider.of<UserProvider>(context);
-    final utente = userProvider.utente;
-
+    // Questo ListenableBuilder ascolta SOLO il caricamento della frase
     return ListenableBuilder(
-      listenable: _viewModel,
-      builder: (context, child) {
-        final utente = userProvider.utente;
+      listenable: viewModel,
+      builder: (context, _) {
+        if (viewModel.isLoading) {
+          return const Padding(
+            padding: EdgeInsets.symmetric(vertical: 20.0),
+            child: Center(
+              child: SizedBox(
+                width: 24,
+                height: 24,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+            ),
+          );
+        }
 
-        if (_viewModel.isLoading || userProvider.isLoading) {
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              "PENSIERO DEL GIORNO",
+              style: GoogleFonts.inter(
+                fontSize: 12,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 1.2,
+                color: Colors.grey.shade600,
+              ),
+            ),
+            const SizedBox(height: 12),
+            SizedBox(
+              width: MediaQuery.of(context).size.width * 0.80,
+              child: Text(
+                "“${viewModel.frase}”",
+                style: GoogleFonts.aBeeZee(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: theme.colorScheme.primary,
+                  height: 1.3,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class ActionCardsWidget extends StatelessWidget {
+  const ActionCardsWidget({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    // Essendo stateless pura, questa riga di bottoni non verrà MAI ricalcolata
+    // a meno che non si cambi schermata nel Wrapper.
+    return IntrinsicHeight(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Expanded(
+            child: ActionCard(
+              title: "Avvia Subito",
+              subtitle: "Cammina libero senza limiti",
+              icon: Icons.bolt,
+              isPrimary: true,
+              onTap: () {
+                // context.read non mette in ascolto la UI, serve solo a lanciare comandi!
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const AttivitaView()),
+                );
+              },
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: ActionCard(
+              title: "Storico attività",
+              subtitle: "Visualizza le tue attività passate",
+              icon: Icons.history,
+              onTap: () {
+                context.read<MainWrapperViewModel>().apriPaginaInterna(
+                  const StoricoAttivitaView(),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class UserForestWidget extends StatelessWidget {
+  const UserForestWidget({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    // Il Consumer fa da "ListenableBuilder" specifico per il UserProvider.
+    // Si aggiornerà solo questa Card quando l'utente sale di livello!
+    return Consumer<UserProvider>(
+      builder: (context, userProvider, child) {
+        if (userProvider.isLoading) {
           return Center(
             child: CircularProgressIndicator(color: theme.colorScheme.primary),
           );
         }
 
+        final utente = userProvider.utente;
         if (utente == null) {
           return const Center(child: Text("Errore nel caricamento dei dati"));
         }
 
-        return SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 20.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // 1. INTENTO GIORNALIERO
-              Text(
-                "PENSIERO DEL GIORNO",
-                style: GoogleFonts.inter(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: 1.2,
-                  color: Colors.grey.shade600,
-                ),
-              ),
-              const SizedBox(height: 12),
-
-              // 2. CITAZIONE (Vincolata al 55%)
-              SizedBox(
-                width: MediaQuery.of(context).size.width * 0.80,
-                child: Text(
-                  "“${_viewModel.frase}”",
-                  style: GoogleFonts.aBeeZee(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: theme.colorScheme.primary,
-                    height: 1.3,
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: 32),
-
-              // 3. AZIONI (Row con IntrinsicHeight)
-              IntrinsicHeight(
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Expanded(
-                      child: ActionCard(
-                        title: "Avvia Subito",
-                        subtitle: "Cammina libero senza limiti",
-                        icon: Icons.bolt,
-                        isPrimary: true,
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const AttivitaView(),
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: ActionCard(
-                        title: "Storico attività",
-                        subtitle: "Visualizza le tue attività passate",
-                        icon: Icons.history,
-                        onTap: () {
-                          context
-                              .read<MainWrapperViewModel>()
-                              .apriPaginaInterna(const StoricoAttivitaView());
-                        },
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              const SizedBox(height: 24),
-
-              // 3. SEZIONE FORESTA (Card replicata per coerenza)
-              ForestCard(
-                livello: utente.livelloCalcolato,
-                percentuale: utente.percentualeLivello.toInt(),
-                onTap: () {
-                  context.read<MainWrapperViewModel>().apriPaginaInterna(
-                    const ForestaImmersivaView(),
-                  );
-                },
-              ),
-            ],
-          ),
+        return ForestCard(
+          livello: utente.livelloCalcolato,
+          percentuale: utente.percentualeLivello.toInt(),
+          onTap: () {
+            context.read<MainWrapperViewModel>().apriPaginaInterna(
+              const ForestaImmersivaView(),
+            );
+          },
         );
       },
     );
   }
-
-  /*
-  Widget _buildBar(double height, {bool isMain = false}) {
-    return Container(
-      width: 12,
-      height: height,
-      decoration: BoxDecoration(
-        color: isMain ? const Color(0xFF012D1C) : Colors.grey.shade300,
-        borderRadius: BorderRadius.circular(10),
-      ),
-    );
-  }*/
 }

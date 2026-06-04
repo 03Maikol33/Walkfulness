@@ -31,86 +31,109 @@ class _StoricoAttivitaViewState extends State<StoricoAttivitaView> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return ListenableBuilder(
-      listenable: _viewModel,
-      builder: (context, _) {
-        return Scaffold(
-          backgroundColor: const Color(0xFFF7FBF8),
-          body: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SizedBox(height: 16),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Text(
-                  "Storico Attività",
-                  style: theme.textTheme.headlineLarge?.copyWith(
-                    color: const Color(0xFF012D1C),
-                  ),
+    // IL BUILD PRINCIPALE ORA È STATICO E PULITO
+    return Scaffold(
+      backgroundColor: const Color(0xFFF7FBF8),
+      body: SafeArea(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const SizedBox(height: 16),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Text(
+                "Storico Attività",
+                style: theme.textTheme.headlineLarge?.copyWith(
+                  color: const Color(0xFF012D1C),
                 ),
               ),
-              Expanded(child: _buildContent(_viewModel)),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildContent(StoricoAttivitaViewModel viewModel) {
-    if (viewModel.isLoading) {
-      return const Center(child: CircularProgressIndicator());
-    }
-
-    if (viewModel.errorMessage != null) {
-      return Center(child: Text(viewModel.errorMessage!));
-    }
-
-    if (viewModel.attivitaList.isEmpty) {
-      return const Center(
-        child: Text(
-          "Nessuna attività completata finora.",
-          style: TextStyle(color: Colors.grey, fontSize: 16),
+            ),
+            // Solo la lista ascolta i cambiamenti del ViewModel
+            Expanded(child: StoricoListWidget(viewModel: _viewModel)),
+          ],
         ),
-      );
-    }
+      ),
+    );
+  }
+}
 
-    return ListView.builder(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-      itemCount: viewModel.attivitaList.length,
-      itemBuilder: (context, index) {
-        final attivita = viewModel.attivitaList[index];
-        final data = attivita.data;
+// ============================================================================
+// WIDGET ESTRATTI E OTTIMIZZATI CON ASCOLTO GRANULARE
+// ============================================================================
 
-        // Formattazione manuale della data (es. 24/05/2026 - 15:30)
-        final dataStr =
-            "${data.day.toString().padLeft(2, '0')}/${data.month.toString().padLeft(2, '0')}/${data.year} - ${data.hour.toString().padLeft(2, '0')}:${data.minute.toString().padLeft(2, '0')}";
+class StoricoListWidget extends StatelessWidget {
+  final StoricoAttivitaViewModel viewModel;
 
-        String sottotitolo = "Camminata libera";
-        /*if (attivita.umorePost != null) {
-          sottotitolo = "Umore: ${attivita.umorePost!.toUpperCase()}";
-        }*/
+  const StoricoListWidget({super.key, required this.viewModel});
 
-        return RouteCard(
-          luogo: "Sessione del $dataStr",
-          km: "${attivita.km.toStringAsFixed(1)} Km",
-          durata: "${attivita.durata.inMinutes} min",
-          sottotitolo: sottotitolo,
-          imageAsset:
-              "assets/images/forest_bg.png", // Manteniamo il tuo sfondo foresta
-          actionButtons: _buildCardButtons(context, attivita),
+  @override
+  Widget build(BuildContext context) {
+    // Questo è l'unico ListenableBuilder della schermata
+    return ListenableBuilder(
+      listenable: viewModel,
+      builder: (context, _) {
+        if (viewModel.isLoading) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        if (viewModel.errorMessage != null) {
+          return Center(child: Text(viewModel.errorMessage!));
+        }
+
+        if (viewModel.attivitaList.isEmpty) {
+          return const Center(
+            child: Text(
+              "Nessuna attività completata finora.",
+              style: TextStyle(color: Colors.grey, fontSize: 16),
+            ),
+          );
+        }
+
+        return ListView.builder(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+          itemCount: viewModel.attivitaList.length,
+          itemBuilder: (context, index) {
+            final attivita = viewModel.attivitaList[index];
+            final data = attivita.data;
+
+            // Formattazione manuale della data
+            final dataStr =
+                "${data.day.toString().padLeft(2, '0')}/${data.month.toString().padLeft(2, '0')}/${data.year} - ${data.hour.toString().padLeft(2, '0')}:${data.minute.toString().padLeft(2, '0')}";
+
+            String sottotitolo = "Camminata libera";
+            // Se in futuro re-integrerai l'umore post-attività nel modello, scommentalo qui:
+            /*if (attivita.umorePost != null) {
+              sottotitolo = "Umore: ${attivita.umorePost!.toUpperCase()}";
+            }*/
+
+            return RouteCard(
+              luogo: "Sessione del $dataStr",
+              km: "${attivita.km.toStringAsFixed(1)} Km",
+              durata: "${attivita.durata.inMinutes} min",
+              sottotitolo: sottotitolo,
+              imageAsset: "assets/images/forest_bg.png",
+              actionButtons: StoricoCardButtonsWidget(attivita: attivita),
+            );
+          },
         );
       },
     );
   }
+}
 
-  Widget _buildCardButtons(BuildContext context, ActivityModel attivita) {
+class StoricoCardButtonsWidget extends StatelessWidget {
+  final ActivityModel attivita;
+
+  const StoricoCardButtonsWidget({super.key, required this.attivita});
+
+  @override
+  Widget build(BuildContext context) {
+    // Bottone totalmente statico che si limita ad aprire il Dialog
     return SizedBox(
       width: double.infinity,
       height: 48,
       child: OutlinedButton.icon(
         onPressed: () {
-          // Ricicliamo la fantastica modale di condivisione creata prima!
           showDialog(
             context: context,
             builder: (context) => CondivisioneDialog(

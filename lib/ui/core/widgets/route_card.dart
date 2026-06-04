@@ -128,7 +128,7 @@ class RouteCard extends StatelessWidget {
                               fontWeight: FontWeight.w400,
                             ),
                           ),
-                        ],
+                        ]
                       ],
                     ),
                   ),

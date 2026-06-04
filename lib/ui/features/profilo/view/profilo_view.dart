@@ -1,4 +1,3 @@
-// lib/ui/features/profilo/view/profilo_view.dart
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
@@ -18,17 +17,13 @@ class ProfiloView extends StatefulWidget {
 }
 
 class _ProfiloViewState extends State<ProfiloView> {
-  // Il ViewModel per gestire le azioni (es. disconnetti)
   final ProfiloViewModel _viewModel = ProfiloViewModel();
 
   @override
   void initState() {
     super.initState();
-    //appena il widget si monta vengono caricati i dati
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      // Carica i dati dell'utente loggato tramite il provider
-      final userProvider = Provider.of<UserProvider>(context, listen: false);
-      userProvider.caricaUtente();
+      context.read<UserProvider>().caricaUtente();
     });
   }
 
@@ -36,140 +31,121 @@ class _ProfiloViewState extends State<ProfiloView> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    // Recupero l'utente loggato grazie al provider
-    final userProvider = Provider.of<UserProvider>(context);
-    final utente = userProvider.utente;
-
-    // Se il provider sta ancora caricando i dati da Firestore, mostriamo la rotellina
-    if (userProvider.isLoading) {
-      return const Center(child: CircularProgressIndicator());
-    }
-
-    //caso utente nullo
-    if (utente == null) {
-      return const Center(
-        child: Text("Errore nel caricamento dei dati utente"),
-      );
-    }
-
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 30.0),
       child: Column(
         children: [
-          Center(
-            // Mantiene tutto perfettamente centrato nella colonna
-            child: Container(
-              padding: const EdgeInsets.all(4),
-              decoration: BoxDecoration(
-                color: theme.colorScheme.primary.withValues(alpha: 0.1),
-                shape: BoxShape.circle,
-              ),
-              // Il ClipOval qui taglia TUTTO quello che c'è dentro in un cerchio
-              child: ClipOval(
-                child: SizedBox(
-                  width: 120, // Imposta la grandezza fissa per entrambi
-                  height: 120,
-                  child: Stack(
-                    children: [
-                      // 1. FOTO PROFILO (layer base)
-                      Positioned.fill(
-                        child: Image.asset(
-                          'assets/images/default_profile_pic.png',
-                          fit: BoxFit.cover,
+          // 1. ZONA UTENTE (Unico pezzo che ascolta i cambiamenti)
+          Consumer<UserProvider>(
+            builder: (context, userProvider, _) {
+              if (userProvider.isLoading) {
+                return const Center(child: CircularProgressIndicator());
+              }
+
+              final utente = userProvider.utente;
+              if (utente == null) {
+                return const Center(
+                  child: Text("Errore nel caricamento dei dati"),
+                );
+              }
+
+              return Column(
+                children: [
+                  Center(
+                    child: Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.primary.withValues(alpha: 0.1),
+                        shape: BoxShape.circle,
+                      ),
+                      child: ClipOval(
+                        child: SizedBox(
+                          width: 120,
+                          height: 120,
+                          child: Stack(
+                            children: [
+                              Positioned.fill(
+                                child: Image.asset(
+                                  'assets/images/default_profile_pic.png',
+                                  fit: BoxFit.cover,
+                                ),
+                              ),
+                              Positioned.fill(
+                                child: Image.asset(
+                                  'assets/images/silver_medal.png',
+                                  fit: BoxFit.cover,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
-
-                      // 2. MEDAGLIA (layer superiore)
-                      Positioned.fill(
-                        child: Image.asset(
-                          'assets/images/silver_medal.png',
-                          fit: BoxFit.cover,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    utente.nome ?? "Non disponibile",
+                    style: GoogleFonts.notoSerif(
+                      fontSize: 28,
+                      fontWeight: FontWeight.bold,
+                      color: theme.colorScheme.primary,
+                    ),
+                  ),
+                  const SizedBox(height: 40),
+                  IntrinsicHeight(
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: _buildStatCard(
+                            "KM PERCORSI",
+                            "${utente.kmPercorsi.toStringAsFixed(1)} km",
+                          ),
                         ),
-                      ),
-                    ],
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: _buildStatCard(
+                            "ORE IN NATURA",
+                            "${utente.oreInNatura.toStringAsFixed(1)} h",
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(height: 16),
-
-          // NOME UTENTE (Preso direttamente dal provider)
-          Text(
-            utente.nome ?? "Non disponibile",
-            style: GoogleFonts.notoSerif(
-              fontSize: 28,
-              fontWeight: FontWeight.bold,
-              color: theme.colorScheme.primary,
-            ),
-          ),
-
-          const SizedBox(height: 40),
-
-          // 2. STATS RAPIDE (KM e ORE)
-          IntrinsicHeight(
-            child: Row(
-              children: [
-                Expanded(
-                  child: _buildStatCard(
-                    context,
-                    "KM PERCORSI",
-                    "${utente.kmPercorsi.toStringAsFixed(1)} km",
+                  const SizedBox(height: 24),
+                  ForestCard(
+                    livello: utente.livelloCalcolato,
+                    percentuale: utente.percentualeLivello.toInt(),
+                    onTap: () {
+                      context.read<MainWrapperViewModel>().apriPaginaInterna(
+                        const ForestaImmersivaView(),
+                      );
+                    },
                   ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: _buildStatCard(
-                    context,
-                    "ORE IN NATURA",
-                    "${utente.oreInNatura.toStringAsFixed(1)} h",
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          const SizedBox(height: 24),
-
-          // 3. SEZIONE FORESTA (Dati calcolati nel modello)
-          ForestCard(
-            livello: utente.livelloCalcolato,
-            percentuale: utente.percentualeLivello.toInt(),
-            onTap: () {
-              context.read<MainWrapperViewModel>().apriPaginaInterna(
-                const ForestaImmersivaView(),
+                ],
               );
             },
           ),
 
           const SizedBox(height: 32),
 
-          // 4. VOCI DI MENU
+          // 2. MENU E LOGOUT (Pezzo 100% Statico!)
           _buildMenuItem(
-            context,
             Icons.history,
             "Storico Attività",
-            onTap: () {
-              context.read<MainWrapperViewModel>().apriPaginaInterna(
-                const StoricoAttivitaView(),
-              );
-            },
+            onTap: () => context.read<MainWrapperViewModel>().apriPaginaInterna(
+              const StoricoAttivitaView(),
+            ),
           ),
           _buildMenuItem(
-            context,
             Icons.map_outlined,
             "I Miei Percorsi",
-            onTap: () {
-              context.read<MainWrapperViewModel>().apriPaginaInterna(
-                const MieiPercorsiView(),
-              );
-            },
+            onTap: () => context.read<MainWrapperViewModel>().apriPaginaInterna(
+              const MieiPercorsiView(),
+            ),
           ),
-          _buildMenuItem(context, Icons.info_outline, "Informazioni"),
+          _buildMenuItem(Icons.info_outline, "Informazioni"),
 
           const SizedBox(height: 40),
-
-          // 5. LINK GESTIONE & LOGOUT
           TextButton(
             onPressed: () {},
             child: Text(
@@ -181,7 +157,7 @@ class _ProfiloViewState extends State<ProfiloView> {
             ),
           ),
           TextButton(
-            onPressed: () => _mostraConfirmLogout(userProvider),
+            onPressed: () => _mostraConfirmLogout(),
             child: const Text(
               "Esci",
               style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
@@ -192,24 +168,22 @@ class _ProfiloViewState extends State<ProfiloView> {
     );
   }
 
-  // Finestra di conferma per il logout
-  void _mostraConfirmLogout(UserProvider userProvider) {
+  void _mostraConfirmLogout() {
     showDialog(
       context: context,
-      builder: (BuildContext context) {
+      builder: (BuildContext dialogContext) {
         return AlertDialog(
           title: const Text("Conferma Logout"),
           content: const Text("Sei sicuro di voler uscire dal tuo account?"),
           actions: [
             TextButton(
-              onPressed: () => Navigator.pop(context),
+              onPressed: () => Navigator.pop(dialogContext),
               child: const Text("Annulla"),
             ),
             TextButton(
               onPressed: () async {
-                Navigator.pop(context);
-                // Resettiamo il provider e disconnettiamo
-                userProvider.reset();
+                Navigator.pop(dialogContext);
+                context.read<UserProvider>().reset(); // Usa read, non ascolta!
                 await _viewModel.disconnetti();
               },
               child: const Text("Esci", style: TextStyle(color: Colors.red)),
@@ -220,8 +194,7 @@ class _ProfiloViewState extends State<ProfiloView> {
     );
   }
 
-  // HELPER: CARD STATISTICHE
-  Widget _buildStatCard(BuildContext context, String label, String value) {
+  Widget _buildStatCard(String label, String value) {
     return Card(
       elevation: 0,
       color: Colors.white,
@@ -255,13 +228,7 @@ class _ProfiloViewState extends State<ProfiloView> {
     );
   }
 
-  // HELPER: MENU ITEM
-  Widget _buildMenuItem(
-    BuildContext context,
-    IconData icon,
-    String title, {
-    VoidCallback? onTap,
-  }) {
+  Widget _buildMenuItem(IconData icon, String title, {VoidCallback? onTap}) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Card(

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:walkfulness/ui/features/genera_con_ai/view_model/genera_con_ai_view_model.dart';
 import 'package:walkfulness/ui/features/crea_tu/view/crea_tu_view.dart';
@@ -28,35 +27,36 @@ class _GeneraConAiViewState extends State<GeneraConAiView> {
 
     return ChangeNotifierProvider(
       create: (_) => GeneraConAiViewModel(),
-      child: Consumer<GeneraConAiViewModel>(
-        builder: (context, vm, _) {
-          return Scaffold(
-            backgroundColor: const Color(0xFFF7FBF8),
-            body: SingleChildScrollView(
-              padding: const EdgeInsets.all(24.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  //selettore mood
-                  Text(
-                    "Genera con AI",
-                    style: theme.textTheme.headlineMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: primary,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    "Come ti senti oggi?",
-                    style: theme.textTheme.labelMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: primary,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  const Text("Scegli un'emozione per iniziare."),
-                  const SizedBox(height: 20),
-                  GridView.builder(
+      child: Scaffold(
+        backgroundColor: const Color(0xFFF7FBF8),
+        body: SingleChildScrollView(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                "Genera con AI",
+                style: theme.textTheme.headlineMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: primary,
+                ),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                "Come ti senti oggi?",
+                style: theme.textTheme.labelMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: primary,
+                ),
+              ),
+              const SizedBox(height: 8),
+              const Text("Scegli un'emozione per iniziare."),
+              const SizedBox(height: 20),
+
+              // 1. GRID DEI MOOD (Ascolta il ViewModel)
+              Consumer<GeneraConAiViewModel>(
+                builder: (context, vm, _) {
+                  return GridView.builder(
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
                     gridDelegate:
@@ -104,20 +104,25 @@ class _GeneraConAiViewState extends State<GeneraConAiView> {
                         ),
                       );
                     },
-                  ),
-                  const SizedBox(height: 32),
+                  );
+                },
+              ),
+              const SizedBox(height: 32),
 
-                  // selettore tag
-                  Text(
-                    "Preferenze ambientali",
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: primary,
-                      fontSize: 16,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Wrap(
+              Text(
+                "Preferenze ambientali",
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: primary,
+                  fontSize: 16,
+                ),
+              ),
+              const SizedBox(height: 12),
+
+              // 2. TAG AMBIENTALI (Ascolta il ViewModel)
+              Consumer<GeneraConAiViewModel>(
+                builder: (context, vm, _) {
+                  return Wrap(
                     spacing: 8,
                     children: vm.tagDisponibili.map((tag) {
                       final isSelected = vm.tagSelezionati.contains(tag);
@@ -136,41 +141,44 @@ class _GeneraConAiViewState extends State<GeneraConAiView> {
                         backgroundColor: Colors.white,
                       );
                     }).toList(),
-                  ),
-                  const SizedBox(height: 32),
+                  );
+                },
+              ),
+              const SizedBox(height: 32),
 
-                  // prompt libero
-                  Text(
-                    "Richieste particolari",
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: primary,
-                      fontSize: 16,
-                    ),
+              Text(
+                "Richieste particolari",
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: primary,
+                  fontSize: 16,
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: _noteController,
+                maxLines: 3,
+                decoration: InputDecoration(
+                  hintText:
+                      "Es: Evita strade asfaltate, voglio passare vicino a un ruscello...",
+                  hintStyle: const TextStyle(
+                    fontSize: 14,
+                    color: Colors.black38,
                   ),
-                  const SizedBox(height: 12),
-                  TextField(
-                    controller: _noteController,
-                    maxLines: 3,
-                    decoration: InputDecoration(
-                      hintText:
-                          "Es: Evita strade asfaltate, voglio passare vicino a un ruscello...",
-                      hintStyle: const TextStyle(
-                        fontSize: 14,
-                        color: Colors.black38,
-                      ),
-                      filled: true,
-                      fillColor: Colors.white,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(16),
-                        borderSide: BorderSide.none,
-                      ),
-                    ),
+                  filled: true,
+                  fillColor: Colors.white,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: BorderSide.none,
                   ),
-                  const SizedBox(height: 40),
+                ),
+              ),
+              const SizedBox(height: 40),
 
-                  // bottone di generazione
-                  SizedBox(
+              // 3. BOTTONE GENERA (Ascolta il ViewModel)
+              Consumer<GeneraConAiViewModel>(
+                builder: (context, vm, _) {
+                  return SizedBox(
                     width: double.infinity,
                     height: 60,
                     child: ElevatedButton(
@@ -204,13 +212,13 @@ class _GeneraConAiViewState extends State<GeneraConAiView> {
                               ),
                             ),
                     ),
-                  ),
-                  const SizedBox(height: 20),
-                ],
+                  );
+                },
               ),
-            ),
-          );
-        },
+              const SizedBox(height: 20),
+            ],
+          ),
+        ),
       ),
     );
   }

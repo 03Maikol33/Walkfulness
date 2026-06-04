@@ -20,7 +20,6 @@ class _MieiPercorsiViewState extends State<MieiPercorsiView> {
   @override
   void initState() {
     super.initState();
-    // Appena la schermata si apre chiede al ViewModel di scaricare i dati.
     Future.microtask(() {
       final userId = context.read<UserProvider>().utente?.uid;
       if (userId != null) {
@@ -33,62 +32,116 @@ class _MieiPercorsiViewState extends State<MieiPercorsiView> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return ListenableBuilder(
-      listenable: _viewModel,
-      builder: (context, _) {
-        return Scaffold(
-          backgroundColor: const Color(0xFFF7FBF8),
-          /*appBar: AppBar(
-            backgroundColor: Colors.transparent,
-            elevation: 0,
-            title: Text(
-              "Percorsi creati da te",
-              style: theme.textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.bold,
+    // BUILD PRINCIPALE STATICO (Nessun ListenableBuilder globale!)
+    return Scaffold(
+      backgroundColor: const Color(0xFFF7FBF8),
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const SizedBox(height: 16),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Text(
+              "I Miei Percorsi",
+              style: theme.textTheme.headlineLarge?.copyWith(
                 color: const Color(0xFF012D1C),
               ),
             ),
-            iconTheme: const IconThemeData(color: Color(0xFF012D1C)),
-          ),*/
-          body: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          ),
+
+          // LA LISTA (Ascolta il caricamento e i dati)
+          Expanded(child: RouteListWidget(viewModel: _viewModel)),
+
+          // I FILTRI (Ascoltano lo stato Pubblico/Privato)
+          FilterSectionWidget(viewModel: _viewModel),
+        ],
+      ),
+    );
+  }
+}
+
+// ============================================================================
+// WIDGET ESTRATTI E OTTIMIZZATI CON ASCOLTO GRANULARE
+// ============================================================================
+
+class RouteListWidget extends StatelessWidget {
+  final MieiPercorsiViewModel viewModel;
+
+  const RouteListWidget({super.key, required this.viewModel});
+
+  @override
+  Widget build(BuildContext context) {
+    return ListenableBuilder(
+      listenable: viewModel,
+      builder: (context, _) {
+        if (viewModel.isLoading) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        if (viewModel.errorMessage != null) {
+          return Center(child: Text(viewModel.errorMessage!));
+        }
+
+        if (viewModel.percorsiVisibili.isEmpty) {
+          return const Center(
+            child: Text(
+              "Nessun percorso trovato in questa categoria.",
+              style: TextStyle(color: Colors.grey, fontSize: 16),
+            ),
+          );
+        }
+
+        return ListView.builder(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+          itemCount: viewModel.percorsiVisibili.length,
+          itemBuilder: (context, index) {
+            final percorso = viewModel.percorsiVisibili[index];
+            final stimaKm = (percorso.tappe.length * 1.5).toStringAsFixed(1);
+
+            return RouteCard(
+              luogo: percorso.nome,
+              km: "${stimaKm}Km",
+              durata: "Stimata",
+              imageAsset: "assets/images/forest_bg.png",
+              actionButtons: CardActionButtonsWidget(
+                viewModel: viewModel,
+                percorso: percorso,
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+}
+
+class FilterSectionWidget extends StatelessWidget {
+  final MieiPercorsiViewModel viewModel;
+
+  const FilterSectionWidget({super.key, required this.viewModel});
+
+  @override
+  Widget build(BuildContext context) {
+    return ListenableBuilder(
+      listenable: viewModel,
+      builder: (context, _) {
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+          child: Row(
             children: [
-              SizedBox(height: 16),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Text(
-                  "I Miei Percorsi",
-                  style: theme.textTheme.headlineLarge?.copyWith(
-                    color: const Color(0xFF012D1C),
-                  ),
+              Expanded(
+                child: FilterButtonWidget(
+                  titolo: "Pubblici",
+                  isActive: viewModel.visualizzaPubblici == true,
+                  onTap: () => viewModel.cambiaFiltro(true),
                 ),
               ),
-              // Lista
-              Expanded(child: _buildContent(_viewModel)),
-              // filtro (Pubblici / Privati)
-              Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 20,
-                  vertical: 10,
-                ),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: _buildFilterButton(
-                        titolo: "Pubblici",
-                        isActive: _viewModel.visualizzaPubblici == true,
-                        onTap: () => _viewModel.cambiaFiltro(true),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: _buildFilterButton(
-                        titolo: "Privati",
-                        isActive: _viewModel.visualizzaPubblici == false,
-                        onTap: () => _viewModel.cambiaFiltro(false),
-                      ),
-                    ),
-                  ],
+              const SizedBox(width: 12),
+              Expanded(
+                child: FilterButtonWidget(
+                  titolo: "Privati",
+                  isActive: viewModel.visualizzaPubblici == false,
+                  onTap: () => viewModel.cambiaFiltro(false),
                 ),
               ),
             ],
@@ -97,52 +150,109 @@ class _MieiPercorsiViewState extends State<MieiPercorsiView> {
       },
     );
   }
+}
 
-  // Widget per gestire gli stati della lista
-  Widget _buildContent(MieiPercorsiViewModel viewModel) {
-    if (viewModel.isLoading) {
-      return const Center(child: CircularProgressIndicator());
-    }
+class FilterButtonWidget extends StatelessWidget {
+  final String titolo;
+  final bool isActive;
+  final VoidCallback onTap;
 
-    if (viewModel.errorMessage != null) {
-      return Center(child: Text(viewModel.errorMessage!));
-    }
+  const FilterButtonWidget({
+    super.key,
+    required this.titolo,
+    required this.isActive,
+    required this.onTap,
+  });
 
-    if (viewModel.percorsiVisibili.isEmpty) {
-      return const Center(
-        child: Text(
-          "Nessun percorso trovato in questa categoria.",
-          style: TextStyle(color: Colors.grey, fontSize: 16),
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        decoration: BoxDecoration(
+          color: isActive ? const Color(0xFF012D1C) : Colors.white,
+          borderRadius: BorderRadius.circular(25),
+          border: isActive ? null : Border.all(color: Colors.grey.shade300),
         ),
-      );
-    }
+        alignment: Alignment.center,
+        child: Text(
+          titolo,
+          style: TextStyle(
+            color: isActive ? Colors.white : Colors.black87,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ),
+    );
+  }
+}
 
-    //la lista usando la Card
-    return ListView.builder(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-      itemCount: viewModel.percorsiVisibili.length,
-      itemBuilder: (context, index) {
-        final percorso = viewModel.percorsiVisibili[index];
+class CardActionButtonsWidget extends StatelessWidget {
+  final MieiPercorsiViewModel viewModel;
+  final PercorsoModel percorso;
 
-        final stimaKm = (percorso.tappe.length * 1.5).toStringAsFixed(1);
+  const CardActionButtonsWidget({
+    super.key,
+    required this.viewModel,
+    required this.percorso,
+  });
 
-        return RouteCard(
-          luogo: percorso.nome,
-          km: "${stimaKm}Km",
-          durata: "Stimata",
-          imageAsset: "assets/images/forest_bg.png",
-          actionButtons: _buildCardButtons(context, viewModel, percorso),
-        );
-      },
+  void _mostraDialogConfermaEliminazione(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text("Elimina percorso"),
+        content: Text("Sei sicuro di voler eliminare '${percorso.nome}'?"),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text("Annulla"),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            onPressed: () async {
+              Navigator.pop(ctx);
+              final successo = await viewModel.eliminaPercorso(percorso.id!);
+              if (successo && context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text("Percorso eliminato")),
+                );
+              }
+            },
+            child: const Text("Elimina", style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
     );
   }
 
-  //bottoni specifici per la schermata I Miei Percorsi
-  Widget _buildCardButtons(
-    BuildContext context,
-    MieiPercorsiViewModel viewModel,
-    PercorsoModel percorso,
-  ) {
+  void _mostraDialogConfermaVisibilita(BuildContext context) {
+    final azione = percorso.isPublic ? "rendere PRIVATO" : "rendere PUBBLICO";
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text("Cambia visibilità"),
+        content: Text("Vuoi davvero $azione il percorso '${percorso.nome}'?"),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text("Annulla"),
+          ),
+          TextButton(
+            onPressed: () {
+              viewModel.toggleVisibilita(percorso);
+              Navigator.pop(ctx);
+            },
+            child: const Text("Conferma"),
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Column(
       children: [
         Row(
@@ -150,8 +260,7 @@ class _MieiPercorsiViewState extends State<MieiPercorsiView> {
           children: [
             // Badge Pubblicato/Privato
             GestureDetector(
-              onTap: () =>
-                  _mostraDialogConfermaVisibilita(context, viewModel, percorso),
+              onTap: () => _mostraDialogConfermaVisibilita(context),
               child: Container(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 10,
@@ -186,7 +295,6 @@ class _MieiPercorsiViewState extends State<MieiPercorsiView> {
             // Bottone Riavvia
             ElevatedButton.icon(
               onPressed: () {
-                //passa l'intero percorso alla View dell'attività
                 Navigator.pushNamed(context, '/attivita', arguments: percorso);
               },
               icon: const Icon(Icons.undo, size: 16, color: Colors.white),
@@ -205,11 +313,7 @@ class _MieiPercorsiViewState extends State<MieiPercorsiView> {
 
             // Bottone Elimina
             IconButton(
-              onPressed: () => _mostraDialogConfermaEliminazione(
-                context,
-                viewModel,
-                percorso,
-              ),
+              onPressed: () => _mostraDialogConfermaEliminazione(context),
               icon: const Icon(Icons.delete_outline, color: Colors.red),
               style: IconButton.styleFrom(backgroundColor: Colors.red.shade50),
             ),
@@ -224,7 +328,7 @@ class _MieiPercorsiViewState extends State<MieiPercorsiView> {
             onPressed: () {
               context.read<MainWrapperViewModel>().apriPaginaInterna(
                 const CreaTuView(),
-                arguments: percorso, // Passiamo il percorso come argomento
+                arguments: percorso,
               );
             },
             icon: const Icon(Icons.search, color: Color(0xFF012D1C)),
@@ -238,95 +342,6 @@ class _MieiPercorsiViewState extends State<MieiPercorsiView> {
           ),
         ),
       ],
-    );
-  }
-
-  // Dialog di conferma
-  void _mostraDialogConfermaEliminazione(
-    BuildContext context,
-    MieiPercorsiViewModel viewModel,
-    PercorsoModel percorso,
-  ) {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text("Elimina percorso"),
-        content: Text("Sei sicuro di voler eliminare '${percorso.nome}'?"),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text("Annulla"),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            onPressed: () async {
-              Navigator.pop(ctx);
-              final successo = await viewModel.eliminaPercorso(percorso.id!);
-              if (successo && mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text("Percorso eliminato")),
-                );
-              }
-            },
-            child: const Text("Elimina", style: TextStyle(color: Colors.white)),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _mostraDialogConfermaVisibilita(
-    BuildContext context,
-    MieiPercorsiViewModel viewModel,
-    PercorsoModel percorso,
-  ) {
-    final azione = percorso.isPublic ? "rendere PRIVATO" : "rendere PUBBLICO";
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text("Cambia visibilità"),
-        content: Text("Vuoi davvero $azione il percorso '${percorso.nome}'?"),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text("Annulla"),
-          ),
-          TextButton(
-            onPressed: () {
-              viewModel.toggleVisibilita(percorso);
-              Navigator.pop(ctx);
-            },
-            child: const Text("Conferma"),
-          ),
-        ],
-      ),
-    );
-  }
-
-  //Componente filtro Pubblici/Privati
-  Widget _buildFilterButton({
-    required String titolo,
-    required bool isActive,
-    required VoidCallback onTap,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 12),
-        decoration: BoxDecoration(
-          color: isActive ? const Color(0xFF012D1C) : Colors.white,
-          borderRadius: BorderRadius.circular(25),
-          border: isActive ? null : Border.all(color: Colors.grey.shade300),
-        ),
-        alignment: Alignment.center,
-        child: Text(
-          titolo,
-          style: TextStyle(
-            color: isActive ? Colors.white : Colors.black87,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      ),
     );
   }
 }
