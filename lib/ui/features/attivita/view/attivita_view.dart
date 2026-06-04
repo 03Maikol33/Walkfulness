@@ -119,7 +119,7 @@ class _AttivitaViewState extends State<AttivitaView> {
                       children: [
                         const SizedBox(height: 50),
                         _buildMainStats(theme),
-                        _buildDebugToggle(),
+                        //_buildDebugToggle(),
                         _buildAudioTogglesCard(theme),
                         const SizedBox(height: 10),
                         _buildMapCard(theme),
@@ -308,7 +308,7 @@ class _AttivitaViewState extends State<AttivitaView> {
   Widget _buildAudioTogglesCard(ThemeData theme) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 24),
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: 0.8),
         borderRadius: BorderRadius.circular(40),
