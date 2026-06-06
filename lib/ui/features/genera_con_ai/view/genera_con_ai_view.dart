@@ -5,7 +5,9 @@ import 'package:walkfulness/ui/features/crea_tu/view/crea_tu_view.dart';
 import 'package:walkfulness/ui/features/main_wrapper/view_model/main_wrapper_view_model.dart';
 
 class GeneraConAiView extends StatefulWidget {
-  const GeneraConAiView({super.key});
+  final GeneraConAiViewModel? viewModelOverride;
+
+  const GeneraConAiView({super.key, this.viewModelOverride});
 
   @override
   State<GeneraConAiView> createState() => _GeneraConAiViewState();
@@ -13,6 +15,14 @@ class GeneraConAiView extends StatefulWidget {
 
 class _GeneraConAiViewState extends State<GeneraConAiView> {
   final TextEditingController _noteController = TextEditingController();
+  late GeneraConAiViewModel _viewModel;
+
+  @override
+  void initState() {
+    super.initState();
+
+    _viewModel = widget.viewModelOverride ?? GeneraConAiViewModel();
+  }
 
   @override
   void dispose() {
@@ -25,8 +35,9 @@ class _GeneraConAiViewState extends State<GeneraConAiView> {
     final theme = Theme.of(context);
     final primary = theme.colorScheme.primary;
 
-    return ChangeNotifierProvider(
-      create: (_) => GeneraConAiViewModel(),
+    // Usiamo .value perché l'istanza è già stata creata nell'initState
+    return ChangeNotifierProvider<GeneraConAiViewModel>.value(
+      value: _viewModel,
       child: Scaffold(
         backgroundColor: const Color(0xFFF7FBF8),
         body: SingleChildScrollView(
@@ -53,7 +64,7 @@ class _GeneraConAiViewState extends State<GeneraConAiView> {
               const Text("Scegli un'emozione per iniziare."),
               const SizedBox(height: 20),
 
-              // 1. GRID DEI MOOD (Ascolta il ViewModel)
+              // 1. GRID DEI MOOD
               Consumer<GeneraConAiViewModel>(
                 builder: (context, vm, _) {
                   return GridView.builder(
@@ -119,7 +130,7 @@ class _GeneraConAiViewState extends State<GeneraConAiView> {
               ),
               const SizedBox(height: 12),
 
-              // 2. TAG AMBIENTALI (Ascolta il ViewModel)
+              // 2. TAG AMBIENTALI
               Consumer<GeneraConAiViewModel>(
                 builder: (context, vm, _) {
                   return Wrap(
@@ -175,7 +186,7 @@ class _GeneraConAiViewState extends State<GeneraConAiView> {
               ),
               const SizedBox(height: 40),
 
-              // 3. BOTTONE GENERA (Ascolta il ViewModel)
+              // 3. BOTTONE GENERA
               Consumer<GeneraConAiViewModel>(
                 builder: (context, vm, _) {
                   return SizedBox(

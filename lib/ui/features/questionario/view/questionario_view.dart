@@ -8,15 +8,26 @@ import '../view_model/questionario_view_model.dart';
 
 class QuestionarioView extends StatefulWidget {
   final ActivityModel attivita;
+  final QuestionarioViewModel? viewModelOverride;
 
-  const QuestionarioView({super.key, required this.attivita});
+  const QuestionarioView({
+    super.key,
+    required this.attivita,
+    this.viewModelOverride,
+  });
 
   @override
   State<QuestionarioView> createState() => _QuestionarioViewState();
 }
 
 class _QuestionarioViewState extends State<QuestionarioView> {
-  final QuestionarioViewModel _viewModel = QuestionarioViewModel();
+  late QuestionarioViewModel _viewModel;
+
+  @override
+  void initState() {
+    super.initState();
+    _viewModel = widget.viewModelOverride ?? QuestionarioViewModel();
+  }
 
   // Stato locale del form (Va benissimo tenerlo qui per un form semplice)
   String? _moodSelezionato;
