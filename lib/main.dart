@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:walkfulness/ui/features/attivita/view/attivita_view.dart';
+import 'package:walkfulness/ui/features/crea_iniziativa/view/crea_iniziativa_view.dart';
 import 'package:walkfulness/ui/features/crea_tu/view/crea_tu_view.dart';
 import 'package:walkfulness/ui/features/main_wrapper/view_model/main_wrapper_view_model.dart';
 import 'ui/core/providers/user_provider.dart';

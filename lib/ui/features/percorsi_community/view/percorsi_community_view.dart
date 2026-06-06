@@ -53,7 +53,7 @@ class CommunityTitleWidget extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.fromLTRB(24, 20, 24, 10),
       child: Text(
-        "Esplora la\nCommunity",
+        "Percorsi della\nCommunity",
         style: theme.textTheme.headlineLarge?.copyWith(
           color: const Color(0xFF012D1C),
         ),

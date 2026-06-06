@@ -1,5 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:walkfulness/ui/features/tribu/view_model/tribu_view_model.dart';
+import 'package:walkfulness/domain/models/iniziativa_model.dart';
+import 'package:walkfulness/ui/features/main_wrapper/view_model/main_wrapper_view_model.dart';
+import 'package:walkfulness/ui/features/crea_iniziativa/view/crea_iniziativa_view.dart';
 
 class TribuView extends StatelessWidget {
   const TribuView({super.key});
@@ -8,160 +14,89 @@ class TribuView extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return Scaffold(
-      // 1. IL BOTTONE FLOTTANTE (Extended FAB)
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => print("Crea iniziativa"),
-        backgroundColor: const Color(0xFF012D1C),
-        icon: const Icon(Icons.add, color: Colors.white),
-        label: Text(
-          "Crea iniziativa",
-          style: GoogleFonts.inter(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            //titolo
-            Text(
-              "Iniziative collettive",
-              style: theme.textTheme.headlineLarge, //stile del testo
-            ),
-            const SizedBox(height: 8),
-            Text("Partecipa ad iniziative collettive nella tua zona."),
-            const SizedBox(height: 24),
+    return ChangeNotifierProvider(
+      create: (_) => TribuViewModel()..caricaIniziative(),
+      child: Builder(
+        builder: (context) {
+          final vm = context.watch<TribuViewModel>();
 
-            // 2. FILTRI RAPIDI (FilterChip)
-            SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                children: [
-                  _buildFilterChip("Qui vicino", isSelected: true),
-                  const SizedBox(width: 8),
-                  _buildFilterChip("Questo weekend"),
-                  const SizedBox(width: 8),
-                  _buildFilterChip("Settimana"),
-                ],
+          return Scaffold(
+            backgroundColor: const Color(0xFFF7FBF8),
+            floatingActionButton: FloatingActionButton.extended(
+              onPressed: () {
+                context.read<MainWrapperViewModel>().apriPaginaInterna(
+                  const CreaIniziativaView(),
+                );
+              },
+              backgroundColor: const Color(0xFF012D1C),
+              icon: const Icon(Icons.add, color: Colors.white),
+              label: const Text(
+                "Crea iniziativa",
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
-
-            const SizedBox(height: 32),
-
-            // 3. CARD INIZIATIVA
-            Card(
-              elevation: 4,
-              shadowColor: Colors.black12,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(32),
-              ),
-              clipBehavior: Clip.antiAlias,
+            body: SafeArea(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Image.asset(
-                    'assets/images/iniziativa_default.jpg',
-                    height: 200,
-                    width: double.infinity,
-                    fit: BoxFit.cover,
-                  ),
-
-                  // IMMAGINE COPERTINA
-                  /*Image.network(
-                    'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?auto=format&fit=crop&w=800&q=80',
-                    height: 250,
-                    width: double.infinity,
-                    fit: BoxFit.cover,
-                  ),*/
                   Padding(
-                    padding: const EdgeInsets.all(20.0),
+                    padding: const EdgeInsets.all(24.0),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // LOCATION
-                        Row(
-                          children: [
-                            const Icon(
-                              Icons.location_on_outlined,
-                              size: 14,
-                              color: Colors.grey,
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              "PARCO NAZIONALE XY",
-                              style: TextStyle(
-                                fontSize: 10,
-                                letterSpacing: 1.2,
-                                color: Colors.grey.shade600,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ],
+                        Text(
+                          "Iniziative collettive",
+                          style: theme.textTheme.headlineLarge?.copyWith(
+                            color: const Color(0xFF012D1C),
+                          ),
                         ),
                         const SizedBox(height: 8),
-                        // TITOLO
-                        Text(
-                          "Sunday Path Restoration",
-                          style: GoogleFonts.notoSerif(
-                            fontSize: 22,
-                            fontWeight: FontWeight.bold,
-                            color: theme.colorScheme.primary,
-                          ),
-                        ),
-
+                        const Text("Partecipa ad iniziative collettive"),
                         const SizedBox(height: 20),
 
-                        // PARTECIPANTI E DISPONIBILITÀ
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            _buildAvatarGroup(),
-                            _buildAvailabilityBadge(),
-                          ],
-                        ),
-
-                        const SizedBox(height: 24),
-
-                        // SEZIONE GOAL (FilledCard Small)
-                        Container(
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: theme.colorScheme.surfaceContainerHighest
-                                .withValues(alpha: 0.3),
-                            borderRadius: BorderRadius.circular(20),
+                        //ricerca
+                        TextField(
+                          onChanged: vm.impostaRicerca,
+                          decoration: InputDecoration(
+                            hintText: "Cerca luogo o titolo...",
+                            prefixIcon: const Icon(Icons.search),
+                            filled: true,
+                            fillColor: Colors.white,
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(20),
+                              borderSide: BorderSide.none,
+                            ),
                           ),
+                        ),
+                        const SizedBox(height: 16),
+
+                        //filtri
+                        SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
                           child: Row(
                             children: [
-                              const Icon(
-                                Icons.eco_outlined,
-                                color: Colors.green,
+                              _buildFiltro(
+                                context,
+                                vm,
+                                "Tutte",
+                                TipoFiltroTribu.tutte,
                               ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    const Text(
-                                      "ECO-IMPACT GOAL",
-                                      style: TextStyle(
-                                        fontSize: 9,
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.grey,
-                                      ),
-                                    ),
-                                    Text(
-                                      "Pulire il sentiero dalle microplastiche.",
-                                      style: TextStyle(
-                                        fontSize: 13,
-                                        color: theme.colorScheme.primary,
-                                      ),
-                                    ),
-                                  ],
-                                ),
+                              const SizedBox(width: 8),
+                              _buildFiltro(
+                                context,
+                                vm,
+                                "Create da me",
+                                TipoFiltroTribu.mie,
+                              ),
+                              const SizedBox(width: 8),
+                              _buildFiltro(
+                                context,
+                                vm,
+                                "Partecipo",
+                                TipoFiltroTribu.partecipo,
                               ),
                             ],
                           ),
@@ -169,96 +104,285 @@ class TribuView extends StatelessWidget {
                       ],
                     ),
                   ),
+
+                  Expanded(
+                    child: vm.isLoading
+                        ? const Center(child: CircularProgressIndicator())
+                        : vm.iniziativeFiltrate.isEmpty
+                        ? const Center(
+                            child: Text("Nessuna iniziativa trovata."),
+                          )
+                        : RefreshIndicator(
+                            onRefresh: vm.caricaIniziative,
+                            color: const Color(0xFF012D1C),
+                            child: ListView.builder(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 24,
+                                vertical: 8,
+                              ),
+                              itemCount: vm.iniziativeFiltrate.length,
+                              itemBuilder: (context, index) => IniziativaCard(
+                                iniziativa: vm.iniziativeFiltrate[index],
+                                viewModel: vm,
+                              ),
+                            ),
+                          ),
+                  ),
                 ],
               ),
             ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }
 
-  // HELPER: FILTER CHIP
-  Widget _buildFilterChip(String label, {bool isSelected = false}) {
+  Widget _buildFiltro(
+    BuildContext context,
+    TribuViewModel vm,
+    String testo,
+    TipoFiltroTribu tipo,
+  ) {
+    final isSelected = vm.filtroAttuale == tipo;
+    final primary = Theme.of(context).colorScheme.primary;
     return FilterChip(
-      label: Text(label),
+      label: Text(testo),
       selected: isSelected,
-      onSelected: (bool value) {},
-      backgroundColor: Colors.grey.shade100,
-      selectedColor: const Color(0xFF012D1C),
+      onSelected: (_) => vm.impostaFiltro(tipo),
+      selectedColor: primary,
       checkmarkColor: Colors.white,
-      labelStyle: TextStyle(
-        color: isSelected ? Colors.white : Colors.black87,
-        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-      ),
+      labelStyle: TextStyle(color: isSelected ? Colors.white : Colors.black87),
       shape: const StadiumBorder(),
-      side: BorderSide.none,
     );
   }
+}
 
-  // HELPER: AVATAR GROUP (Volti sovrapposti)
-  Widget _buildAvatarGroup() {
-    return Row(
-      children: [
-        SizedBox(
-          width: 80,
-          height: 32,
-          child: Stack(
-            children: [
-              _avatar(0, 'https://i.pravatar.cc/150?u=1'),
-              _avatar(20, 'https://i.pravatar.cc/150?u=2'),
-              Positioned(
-                left: 40,
-                child: CircleAvatar(
-                  radius: 16,
-                  backgroundColor: const Color(0xFF184D4F),
-                  child: const Text(
-                    "+12",
-                    style: TextStyle(fontSize: 10, color: Colors.white),
+class IniziativaCard extends StatelessWidget {
+  final IniziativaModel iniziativa;
+  final TribuViewModel viewModel;
+
+  const IniziativaCard({
+    super.key,
+    required this.iniziativa,
+    required this.viewModel,
+  });
+
+  //aprire Google Maps con il Pin
+  Future<void> _apriGoogleMaps() async {
+    final lat = iniziativa.posizione.latitude;
+    final lng = iniziativa.posizione.longitude;
+    final Uri url = Uri.parse(
+      'https://www.google.com/maps/search/?api=1&query=$lat,$lng',
+    );
+
+    if (!await launchUrl(url, mode: LaunchMode.externalApplication)) {
+      debugPrint("Impossibile aprire Google Maps");
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isOwner = iniziativa.creatoreId == viewModel.currentUserId;
+    final isPartecipante = iniziativa.partecipantiIds.contains(
+      viewModel.currentUserId,
+    );
+    final postiRimasti =
+        iniziativa.maxPartecipanti - iniziativa.partecipantiIds.length;
+
+    return Card(
+      elevation: 4,
+      shadowColor: Colors.black12,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(32)),
+      clipBehavior: Clip.antiAlias,
+      margin: const EdgeInsets.only(bottom: 24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            height: 200,
+            width: double.infinity,
+            color: Colors.grey.shade300,
+            child: Image.asset(
+              (iniziativa.immagineCopertina?.isNotEmpty ?? false)
+                  ? iniziativa.immagineCopertina!
+                  : 'assets/images/iniziativa_default.jpg',
+              fit: BoxFit.cover,
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(20.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  iniziativa.luogo.toUpperCase(),
+                  style: const TextStyle(
+                    fontSize: 10,
+                    color: Colors.grey,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(width: 8),
-        const Text(
-          "14 partecipanti",
-          style: TextStyle(fontSize: 12, color: Colors.grey),
-        ),
-      ],
-    );
-  }
+                const SizedBox(height: 8),
+                Text(
+                  iniziativa.titolo,
+                  style: GoogleFonts.notoSerif(
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                    color: theme.colorScheme.primary,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  "Data: ${iniziativa.dataOra.day}/${iniziativa.dataOra.month}/${iniziativa.dataOra.year} - ${iniziativa.dataOra.hour}:${iniziativa.dataOra.minute.toString().padLeft(2, '0')}",
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
 
-  Positioned _avatar(double left, String url) {
-    return Positioned(
-      left: left,
-      child: CircleAvatar(
-        radius: 16,
-        backgroundColor: Colors.white,
-        child: CircleAvatar(radius: 14, backgroundImage: NetworkImage(url)),
-      ),
-    );
-  }
+                const SizedBox(height: 8),
+                //pulsante per google maps
+                TextButton.icon(
+                  onPressed: _apriGoogleMaps,
+                  icon: const Icon(Icons.directions, size: 18),
+                  label: const Text("Raggiungi il posto"),
+                  style: TextButton.styleFrom(
+                    foregroundColor: theme.colorScheme.primary,
+                    padding: EdgeInsets.zero,
+                    minimumSize: const Size(50, 30),
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    alignment: Alignment.centerLeft,
+                  ),
+                ),
+                const SizedBox(height: 20),
 
-  // HELPER: BADGE DISPONIBILITÀ
-  Widget _buildAvailabilityBadge() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        color: const Color(0xFFC7EBEB),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Column(
-        children: const [
-          Text("Ancora", style: TextStyle(fontSize: 9, color: Colors.black54)),
-          Text(
-            "20 posti",
-            style: TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.bold,
-              color: Color(0xFF184D4F),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      "${iniziativa.partecipantiIds.length} partecipanti",
+                      style: const TextStyle(fontSize: 12, color: Colors.grey),
+                    ),
+                    if (postiRimasti > 0)
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 8,
+                        ),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFC7EBEB),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          "Ancora $postiRimasti posti",
+                          style: const TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF184D4F),
+                          ),
+                        ),
+                      )
+                    else
+                      const Text(
+                        "AL COMPLETO",
+                        style: TextStyle(
+                          color: Colors.red,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12,
+                        ),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 20),
+                Row(
+                  children: [
+                    if (isOwner) ...[
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: () {
+                            context
+                                .read<MainWrapperViewModel>()
+                                .apriPaginaInterna(
+                                  CreaIniziativaView(
+                                    iniziativaDaModificare: iniziativa,
+                                  ),
+                                );
+                          },
+                          child: const Text("Modifica"),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.red.shade100,
+                          ),
+                          onPressed: () => _mostraConfermaEliminazione(context),
+                          child: const Text(
+                            "Elimina",
+                            style: TextStyle(color: Colors.red),
+                          ),
+                        ),
+                      ),
+                    ] else if (isPartecipante) ...[
+                      Expanded(
+                        child: ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.orange.shade100,
+                          ),
+                          onPressed: () => viewModel.abbandona(iniziativa.id),
+                          child: const Text(
+                            "Smetti di partecipare",
+                            style: TextStyle(color: Colors.deepOrange),
+                          ),
+                        ),
+                      ),
+                    ] else ...[
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: postiRimasti > 0
+                              ? () => viewModel.partecipa(iniziativa.id)
+                              : null,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: theme.colorScheme.primary,
+                          ),
+                          child: const Text(
+                            "Partecipa anche tu",
+                            style: TextStyle(color: Colors.white),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ],
             ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _mostraConfermaEliminazione(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text("Elimina Iniziativa"),
+        content: const Text(
+          "Sei sicuro di voler eliminare definitivamente questo evento?",
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text("Annulla"),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              viewModel.elimina(iniziativa.id);
+            },
+            child: const Text("Elimina", style: TextStyle(color: Colors.red)),
           ),
         ],
       ),

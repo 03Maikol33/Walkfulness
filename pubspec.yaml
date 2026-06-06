@@ -54,6 +54,7 @@ dependencies:
 
   path_provider: ^2.1.2
   share_plus: ^7.2.2
+  url_launcher: ^6.3.2
 
 dev_dependencies:
   flutter_test:
@@ -87,6 +88,15 @@ flutter:
 
   assets:
     - assets/images/iniziativa_default.jpg
+    - assets/images/foresta1.jpg
+    - assets/images/foresta2.jpg
+    - assets/images/lago1.jpg
+    - assets/images/lago2.jpg
+    - assets/images/montagna1.jpg
+    - assets/images/montagna2.jpg
+    - assets/images/parco.jpg
+    - assets/images/spiaggia.jpg
+
     - assets/images/default_profile_pic.png
     - assets/images/logo_decorated.png
     - assets/images/forest_bg.png
