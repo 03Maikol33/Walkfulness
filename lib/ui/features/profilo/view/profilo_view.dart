@@ -35,7 +35,6 @@ class _ProfiloViewState extends State<ProfiloView> {
       padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 30.0),
       child: Column(
         children: [
-          // 1. ZONA UTENTE (Unico pezzo che ascolta i cambiamenti)
           Consumer<UserProvider>(
             builder: (context, userProvider, _) {
               if (userProvider.isLoading) {
@@ -128,7 +127,6 @@ class _ProfiloViewState extends State<ProfiloView> {
 
           const SizedBox(height: 32),
 
-          // 2. MENU E LOGOUT (Pezzo 100% Statico!)
           _buildMenuItem(
             Icons.history,
             "Storico Attività",
@@ -183,7 +181,7 @@ class _ProfiloViewState extends State<ProfiloView> {
             TextButton(
               onPressed: () async {
                 Navigator.pop(dialogContext);
-                context.read<UserProvider>().reset(); // Usa read, non ascolta!
+                context.read<UserProvider>().reset(); // Usa read e non ascolta
                 await _viewModel.disconnetti();
               },
               child: const Text("Esci", style: TextStyle(color: Colors.red)),

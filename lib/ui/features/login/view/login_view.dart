@@ -10,14 +10,12 @@ class LoginView extends StatefulWidget {
 }
 
 class _LoginViewState extends State<LoginView> {
-  //Istanzia il ViewModel e i Controller
   final LoginViewModel _viewModel = LoginViewModel();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
 
   @override
   void dispose() {
-    // Importante: pulisce i controller per evitare memory leak
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
@@ -47,7 +45,6 @@ class _LoginViewState extends State<LoginView> {
                   height: 250,
                 ),
 
-                //MESSAGGIO DI ERRORE
                 if (_viewModel.errorMessage != null)
                   Padding(
                     padding: const EdgeInsets.only(bottom: 16.0),
@@ -60,7 +57,6 @@ class _LoginViewState extends State<LoginView> {
                     ),
                   ),
 
-                //CAMPI DI INPUT
                 _buildTextField(
                   label: "Email",
                   icon: Icons.email_outlined,
@@ -79,7 +75,7 @@ class _LoginViewState extends State<LoginView> {
                   alignment: Alignment.centerRight,
                   child: TextButton(
                     onPressed: () {
-                      /* Logica recupero password */
+                      /* TODO: recupero psswrd*/
                     },
                     child: Text(
                       "Password dimenticata?",
@@ -93,7 +89,6 @@ class _LoginViewState extends State<LoginView> {
 
                 const SizedBox(height: 30),
 
-                //BOTTONE LOGIN CON LOGICA INTEGRATA
                 SizedBox(
                   width: double.infinity,
                   height: 55,
@@ -101,7 +96,6 @@ class _LoginViewState extends State<LoginView> {
                     onPressed: _viewModel.isLoading
                         ? null // Disabilita il tasto durante il caricamento
                         : () async {
-                            // Chiamata al ViewModel
                             await _viewModel.accedi(
                               _emailController.text.trim(),
                               _passwordController.text.trim(),
@@ -127,7 +121,6 @@ class _LoginViewState extends State<LoginView> {
 
                 const SizedBox(height: 40),
 
-                // 5. COLLEGAMENTO ALLA REGISTRAZIONE
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [

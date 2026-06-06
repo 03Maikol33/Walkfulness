@@ -24,7 +24,6 @@ class AttivitaViewModel extends ChangeNotifier {
   final PoiService _poiService = PoiService();
   final AudioManager audioManager = AudioManager();
   final MindfulnessService _mindfulness = MindfulnessService();
-  //final AudioGuideService audioGuideService = AudioGuideService();
   final ActivityRepository _activityRepository = ActivityRepository();
   final RoutingService _routingService = RoutingService();
   List<PinModel> tappePianificate = [];
@@ -54,15 +53,13 @@ class AttivitaViewModel extends ChangeNotifier {
 
   void cambiaTraccia(String nomeFile) {
     if (tracciaAttiva == nomeFile) {
-      // Se clicca sulla traccia già attiva, la spegne (Pausa)
       audioManager.fermaSottofondo();
       tracciaAttiva = null;
     } else {
-      // Avvia la nuova traccia
       audioManager.avviaSottofondoNaturale(nomeFile);
       tracciaAttiva = nomeFile;
     }
-    notifyListeners(); // Avvisa l'UI per accendere il pulsante
+    notifyListeners();
   }
 
   void toggleSuoniAmbientali() {
@@ -72,12 +69,12 @@ class AttivitaViewModel extends ChangeNotifier {
     } else {
       cambiaTraccia(
         tracceDisponibili[0]['file']!,
-      ); // Avvia la prima traccia (Bosco)
+      );
     }
     notifyListeners();
   }
 
-  // Tasto Avanti
+  //Avanti
   void tracciaSuccessiva() {
     if (tracciaAttiva == null) {
       cambiaTraccia(tracceDisponibili[0]['file']!);
@@ -86,11 +83,11 @@ class AttivitaViewModel extends ChangeNotifier {
     int index = tracceDisponibili.indexWhere((t) => t['file'] == tracciaAttiva);
     int nextIndex =
         (index + 1) %
-        tracceDisponibili.length; // Passa alla successiva o riparte da zero
+        tracceDisponibili.length;
     cambiaTraccia(tracceDisponibili[nextIndex]['file']!);
   }
 
-  // Tasto Indietro
+  //Indietro
   void tracciaPrecedente() {
     if (tracciaAttiva == null) {
       cambiaTraccia(tracceDisponibili.last['file']!);
@@ -102,16 +99,15 @@ class AttivitaViewModel extends ChangeNotifier {
     cambiaTraccia(tracceDisponibili[prevIndex]['file']!);
   }
 
-  // Slider Volume
+  //Volume
   void cambiaVolume(double nuovoVolume) {
     volumeAmbientale = nuovoVolume;
     audioManager.impostaVolumeBase(
       nuovoVolume,
-    ); // Comunica il nuovo volume al manager
+    );
     notifyListeners();
   }
 
-  // Variabili per Background e Audio
   DateTime? _oraDiInizio;
   DateTime? _ultimoControlloPoi;
   bool _isCercandoPoi = false;
@@ -125,16 +121,14 @@ class AttivitaViewModel extends ChangeNotifier {
     List<PinModel> tappe, {
     String? id,
   }) async {
-    // Evitiamo ricalcoli se il percorso è già stato caricato
     if (tappePianificate.isNotEmpty || tappe.isEmpty) return;
 
     tappePianificate = tappe;
     percorsoOrigineId = id;
-    notifyListeners(); // Notifica subito per far apparire almeno i pallini sulla mappa
+    notifyListeners(); 
 
     List<LatLng> tracciaRicalcolata = [];
 
-    // Ricostruiamo segmento per segmento esattamente come nella schermata Crea Tu
     for (int i = 0; i < tappe.length - 1; i++) {
       final startPin = tappe[i];
       final endPin = tappe[i + 1];
@@ -155,7 +149,7 @@ class AttivitaViewModel extends ChangeNotifier {
     }
 
     percorsoPianificatoCompleto = tracciaRicalcolata;
-    notifyListeners(); // Notifica finale per far apparire la linea azzurra unita
+    notifyListeners();
   }
 
   Future<void> cambiaSorgenteGps(bool usaMock) async {
@@ -191,15 +185,13 @@ class AttivitaViewModel extends ChangeNotifier {
     try {
       await _locationService.inizializza();
       await audioManager.inizializza();
-      // await audioManager.avviaSottofondoNaturale('audio/foresta.mp3'); //  quando avrò l'MP3
       await audioManager.parla("Attività avviata. Iniziamo!");
 
-      // Se hai il metodo inizializza nel PoiService, chiamalo, altrimenti resettalo.
       try {
         _poiService.inizializza();
       } catch (_) {}
 
-      _oraDiInizio = DateTime.now(); // Per il conteggio immune al background
+      _oraDiInizio = DateTime.now();
 
       _inizioCronometro();
       _ascoltaPosizione();
@@ -217,25 +209,10 @@ class AttivitaViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  //gestione del player
-  /*Future<void> toggleSuoniAmbientali() async {
-    isAmbienteAttivo = !isAmbienteAttivo;
-    if (isAmbienteAttivo) {
-      // Quando avrai il file .mp3, lo farai partire qui
-      // await audioManager.avviaSottofondoNaturale('audio/foresta.mp3');
-      print("[AUDIO] Play Sottofondo Naturale");
-    } else {
-      await audioManager.fermaSottofondo();
-      print("[AUDIO] Pausa Sottofondo Naturale");
-    }
-    notifyListeners();
-  }*/
-
   void _inizioCronometro() {
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (_oraDiInizio != null) {
         durata = DateTime.now().difference(_oraDiInizio!);
-        notifyListeners();
       }
     });
   }
@@ -384,7 +361,7 @@ class AttivitaViewModel extends ChangeNotifier {
 
       await userProvider.caricaUtente(forceRefresh: true);
       return ActivityModel(
-        id: activityId, // ORA POSSIAMO PASSARLO AL QUESTIONARIO
+        id: activityId,
         userId: user.uid,
         km: kmPercorsi,
         data: DateTime.now(),

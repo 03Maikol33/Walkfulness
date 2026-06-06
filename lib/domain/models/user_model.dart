@@ -1,7 +1,7 @@
 import 'dart:math';
 
 class UserModel {
-  final String uid; // L'ID univoco fornito da Firebase
+  final String uid; //id univoco fornito da Firebase
   final String email;
   final String? nome;
   final double kmPercorsi;
@@ -19,14 +19,13 @@ class UserModel {
 
   int get livelloCalcolato {
     if (kmPercorsi <= 0) return 1;
-    // Formula inversa: L = floor(0.5 + sqrt(0.25 + 0.2 * K))
     return (0.5 + sqrt(0.25 + 0.2 * kmPercorsi)).floor();
   }
 
   double get percentualeLivello {
     int L = livelloCalcolato;
-    int kmInizio = 5 * L * (L - 1); // Traguardo livello attuale
-    int kmFine = 5 * (L + 1) * L; // Traguardo livello successivo
+    int kmInizio = 5 * L * (L - 1); // traguardo livello attuale
+    int kmFine = 5 * (L + 1) * L; // traguardo livello successivo
 
     if (kmFine == kmInizio) return 0.0;
 

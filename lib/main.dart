@@ -12,7 +12,6 @@ import 'ui/features/main_wrapper/view/main_wrapper_view.dart';
 import 'ui/features/login/view/login_view.dart';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 
-
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   FlutterForegroundTask.initCommunicationPort();
@@ -22,9 +21,7 @@ void main() async {
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => UserProvider()),
-        ChangeNotifierProvider(
-          create: (_) => MainWrapperViewModel(),
-        ),
+        ChangeNotifierProvider(create: (_) => MainWrapperViewModel()),
       ],
       child: const MyApp(),
     ),
@@ -51,12 +48,10 @@ class MyApp extends StatelessWidget {
 
           if (snapshot.hasData) {
             //se c'è un utente loggato, mostro la schermata principale
-            // L'utente è loggato. Diciamo al provider di caricare i dati una volta sola.
-            // Usiamo Future.microtask per evitare errori di build
+            // L'utente è loggato. chiede al provider di caricare i dati una volta sola.
+            //Future.microtask per evitare errori di build
             Future.microtask(() {
               if (context.mounted) {
-                //devo anche controllare se il contesto è ancora montato prima di chiamare il provider
-                //perché potrebbe capitare che l'utente durante l'attesa chiuda la schermata ...
                 context.read<UserProvider>().caricaUtente();
               }
             });

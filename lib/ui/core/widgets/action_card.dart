@@ -24,7 +24,7 @@ class ActionCard extends StatelessWidget {
     final theme = Theme.of(context);
 
     return Card(
-      clipBehavior: Clip.antiAlias, // Taglia visivamente l'eccedenza
+      clipBehavior: Clip.antiAlias, // rimuove l'overflow
       color:
           colorOverride ??
           (isPrimary ? theme.colorScheme.primary : theme.cardTheme.color),
@@ -34,7 +34,6 @@ class ActionCard extends StatelessWidget {
           constraints: const BoxConstraints(minHeight: 150),
           width: double.infinity,
           padding: const EdgeInsets.all(16),
-          // Usiamo questo per evitare che Flutter segnali l'overflow in basso
           child: SingleChildScrollView(
             physics: const NeverScrollableScrollPhysics(),
             child: Column(

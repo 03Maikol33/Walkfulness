@@ -5,7 +5,7 @@ import 'package:latlong2/latlong.dart';
 enum TipoRouting { lineaAria, automatico }
 
 class RoutingService {
-  //Routing Automatico (OSRM) tra due punti
+  //Routing Automatico tra due punti
   Future<List<LatLng>> calcolaOSRM(LatLng start, LatLng end) async {
     final url = Uri.parse(
       'http://router.project-osrm.org/route/v1/foot/${start.longitude},${start.latitude};${end.longitude},${end.latitude}?overview=full&geometries=geojson',
@@ -26,16 +26,16 @@ class RoutingService {
     } catch (e) {
       print('[ROUTING] Errore OSRM: $e');
     }
-    // In caso di errore OSRM, fallback su linea retta
+    // In caso di errore OSRM fallback su linea retta
     return calcolaLineaAria(start, end);
   }
 
-  //Routing Manuale (Linea Retta)
+  //Routing Linea d'Aria tra due punti
   List<LatLng> calcolaLineaAria(LatLng start, LatLng end) {
     return [start, end];
   }
 
-  //Reverse Geocoding (Da Coordinate a Città)
+  //da Coordinate a Città
   Future<String> rilevaCitta(LatLng coordinate) async {
     final url = Uri.parse(
       'https://nominatim.openstreetmap.org/reverse?format=json&lat=${coordinate.latitude}&lon=${coordinate.longitude}&zoom=10&addressdetails=1',

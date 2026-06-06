@@ -19,12 +19,10 @@ class LocationTaskHandler extends TaskHandler {
     final locationSettings = AndroidSettings(
       accuracy: LocationAccuracy.best,
       distanceFilter: 2,
-      //forceLocationManager: true, altrimenti usa il fused location che a volte viene spento in background
-      //timeLimit: const Duration(seconds: 10), // timeout per ogni lettura
       intervalDuration: const Duration(seconds: 2),
     );
 
-    // Prima lettura immediata
+    // prima lettura immediata
     try {
       print("[ISOLATE] Tentativo getCurrentPosition...");
       final initialPos =
@@ -44,7 +42,7 @@ class LocationTaskHandler extends TaskHandler {
         "[ISOLATE] Posizione iniziale trovata: ${initialPos.latitude}, ${initialPos.longitude}",
       );
 
-      // CRITICO: Verifica che il main thread sia pronto
+      //verifica che il main thread sia pronto
       await Future.delayed(const Duration(milliseconds: 100));
 
       final dataToSend = {
@@ -57,13 +55,13 @@ class LocationTaskHandler extends TaskHandler {
       FlutterForegroundTask.sendDataToMain(dataToSend);
     } catch (e) {
       print("[ISOLATE] ERRORE prima lettura GPS: $e");
-      // Invia un dato di errore al main thread per diagnostica
+      // diagnostica
       FlutterForegroundTask.sendDataToMain({
         'error': 'getCurrentPosition failed: $e',
       });
     }
 
-    // Avvia lo stream continuo
+    // avvia lo stream continuo
     print("[ISOLATE] Avvio getPositionStream...");
     _positionStream =
         Geolocator.getPositionStream(locationSettings: locationSettings).listen(
@@ -89,7 +87,7 @@ class LocationTaskHandler extends TaskHandler {
             });
           },
           cancelOnError:
-              false, // IMPORTANTE: Non killare lo stream al primo errore
+              false, // evita che lo stream venga chiuso in caso di errori
         );
 
     print("[ISOLATE] Stream attivato correttamente");
@@ -97,8 +95,8 @@ class LocationTaskHandler extends TaskHandler {
 
   @override
   void onRepeatEvent(DateTime timestamp) {
-    // Heartbeat diagnostico ogni 5 secondi
-    print("[ISOLATE] Heartbeat - Stream attivo: ${_positionStream != null}");
+    //diagnostica
+    print("[ISOLATE] Stream attivo: ${_positionStream != null}");
   }
 
   @override
@@ -113,7 +111,6 @@ class LocationService implements LocationServiceBase {
   StreamController<GeoPoint>? _positionController;
   late final void Function(Object) _taskDataCallback;
 
-  // NUOVO: Contatore per diagnostica
   int _dataReceivedCount = 0;
 
   double velocitaCorrente = 0.0;
@@ -128,15 +125,12 @@ class LocationService implements LocationServiceBase {
     );
 
     if (data is Map) {
-      // Gestisci errori
       if (data.containsKey('error')) {
         print(
           "[MAIN THREAD] ⚠️ Errore ricevuto dall'isolate: ${data['error']}",
         );
         return;
       }
-
-      // Verifica che il controller sia valido
       if (_positionController == null) {
         print("[MAIN THREAD] ERRORE: Controller è null!");
         return;
@@ -147,12 +141,12 @@ class LocationService implements LocationServiceBase {
         return;
       }
 
-      // Estrai la velocità
+      // calcola velocità in km/h se presente
       final speedMs = (data['speed'] as num?)?.toDouble() ?? 0.0;
       print("[MAIN THREAD] Velocità ricevuta: $speedMs m/s");
       velocitaCorrente = speedMs * 3.6; // km/h
 
-      // Estrai coordinate
+      // ottieni lat e lng
       final lat = (data['lat'] as num?)?.toDouble();
       final lng = (data['lng'] as num?)?.toDouble();
 
@@ -172,13 +166,12 @@ class LocationService implements LocationServiceBase {
   Future<void> inizializza() async {
     print("[MAIN THREAD] Inizializzazione LocationService...");
 
-    // 1. Cleanup del vecchio controller
     await _positionController?.close();
     _positionController = StreamController<GeoPoint>.broadcast();
     _dataReceivedCount = 0;
     print("[MAIN THREAD]  StreamController creato");
 
-    // 2. Permessi GPS
+
     LocationPermission permission = await Geolocator.checkPermission();
     print("[MAIN THREAD] Permesso GPS attuale: $permission");
 
@@ -192,7 +185,6 @@ class LocationService implements LocationServiceBase {
       throw Exception("Permessi GPS negati: $permission");
     }
 
-    // 3. Permessi Notifica
     final notificationPermission =
         await FlutterForegroundTask.checkNotificationPermission();
     print("[MAIN THREAD] Permesso notifiche: $notificationPermission");
@@ -201,7 +193,7 @@ class LocationService implements LocationServiceBase {
       await FlutterForegroundTask.requestNotificationPermission();
     }
 
-    // 4. Init ForegroundTask
+    // inizializza il task in foreground
     FlutterForegroundTask.init(
       androidNotificationOptions: AndroidNotificationOptions(
         channelId: 'walkfulness_tracker',
@@ -223,15 +215,15 @@ class LocationService implements LocationServiceBase {
     );
     print("[MAIN THREAD] ForegroundTask configurato");
 
-    // 5. CRITICO: Registra il callback PRIMA di avviare il servizio
+    // registra il callback per ricevere i dati dall'isolate
     FlutterForegroundTask.removeTaskDataCallback(_taskDataCallback);
     FlutterForegroundTask.addTaskDataCallback(_taskDataCallback);
     print("[MAIN THREAD] Callback registrato");
 
-    // 6. NUOVO: Aspetta un momento per garantire la registrazione
+
     await Future.delayed(const Duration(milliseconds: 100));
 
-    // 7. Avvia/Riavvia il servizio
+    //  controlla se il servizio è già in esecuzione 
     final isRunning = await FlutterForegroundTask.isRunningService;
     print("[MAIN THREAD] Servizio già in esecuzione: $isRunning");
 

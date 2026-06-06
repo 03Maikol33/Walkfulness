@@ -43,7 +43,7 @@ class _MainWrapperViewState extends State<MainWrapperView> {
           title: Image.asset('assets/images/logo_decorated.png', height: 40),
           centerTitle: false,
         ),
-        //se c'è una pagina interna la mostriamo, altrimenti usiamo l'IndexedStack
+        //se c'è una pagina interna viene mostrata, altrimenti usa l'IndexedStack
         body: viewModel.paginaInterna != null
             ? viewModel.paginaInterna!
             : IndexedStack(index: viewModel.currentIndex, children: _pages),

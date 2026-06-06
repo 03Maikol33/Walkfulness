@@ -28,24 +28,15 @@ class _ForestaViewState extends State<ForestaView> {
 
   @override
   Widget build(BuildContext context) {
-    // La pagina principale ora è totalmente STATICA!
-    // Nessun Provider.of in ascolto globale, nessun ListenableBuilder gigante.
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 20.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // 1. INTENTO GIORNALIERO (Ascolta il ForestaViewModel)
           QuoteWidget(viewModel: _viewModel),
-
           const SizedBox(height: 32),
-
-          // 2. AZIONI (Totalmente statiche, non ascoltano nulla)
           const ActionCardsWidget(),
-
           const SizedBox(height: 24),
-
-          // 3. SEZIONE FORESTA (Ascolta il UserProvider tramite Consumer)
           const UserForestWidget(),
         ],
       ),
@@ -53,9 +44,7 @@ class _ForestaViewState extends State<ForestaView> {
   }
 }
 
-// ============================================================================
-// WIDGET ESTRATTI E OTTIMIZZATI CON ASCOLTO GRANULARE
-// ============================================================================
+//widget componenti ui
 
 class QuoteWidget extends StatelessWidget {
   final ForestaViewModel viewModel;
@@ -66,7 +55,7 @@ class QuoteWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    // Questo ListenableBuilder ascolta SOLO il caricamento della frase
+    //listenable builder ascolta solo il cambiamento della frase
     return ListenableBuilder(
       listenable: viewModel,
       builder: (context, _) {
@@ -120,8 +109,6 @@ class ActionCardsWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Essendo stateless pura, questa riga di bottoni non verrà MAI ricalcolata
-    // a meno che non si cambi schermata nel Wrapper.
     return IntrinsicHeight(
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -133,7 +120,6 @@ class ActionCardsWidget extends StatelessWidget {
               icon: Icons.bolt,
               isPrimary: true,
               onTap: () {
-                // context.read non mette in ascolto la UI, serve solo a lanciare comandi!
                 Navigator.push(
                   context,
                   MaterialPageRoute(builder: (context) => const AttivitaView()),
@@ -167,8 +153,6 @@ class UserForestWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    // Il Consumer fa da "ListenableBuilder" specifico per il UserProvider.
-    // Si aggiornerà solo questa Card quando l'utente sale di livello!
     return Consumer<UserProvider>(
       builder: (context, userProvider, child) {
         if (userProvider.isLoading) {

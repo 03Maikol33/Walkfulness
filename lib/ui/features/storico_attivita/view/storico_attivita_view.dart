@@ -30,8 +30,6 @@ class _StoricoAttivitaViewState extends State<StoricoAttivitaView> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-
-    // IL BUILD PRINCIPALE ORA È STATICO E PULITO
     return Scaffold(
       backgroundColor: const Color(0xFFF7FBF8),
       body: SafeArea(
@@ -48,7 +46,6 @@ class _StoricoAttivitaViewState extends State<StoricoAttivitaView> {
                 ),
               ),
             ),
-            // Solo la lista ascolta i cambiamenti del ViewModel
             Expanded(child: StoricoListWidget(viewModel: _viewModel)),
           ],
         ),
@@ -57,9 +54,7 @@ class _StoricoAttivitaViewState extends State<StoricoAttivitaView> {
   }
 }
 
-// ============================================================================
-// WIDGET ESTRATTI E OTTIMIZZATI CON ASCOLTO GRANULARE
-// ============================================================================
+// Widget componenti UI
 
 class StoricoListWidget extends StatelessWidget {
   final StoricoAttivitaViewModel viewModel;
@@ -68,7 +63,6 @@ class StoricoListWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Questo è l'unico ListenableBuilder della schermata
     return ListenableBuilder(
       listenable: viewModel,
       builder: (context, _) {
@@ -96,15 +90,10 @@ class StoricoListWidget extends StatelessWidget {
             final attivita = viewModel.attivitaList[index];
             final data = attivita.data;
 
-            // Formattazione manuale della data
             final dataStr =
                 "${data.day.toString().padLeft(2, '0')}/${data.month.toString().padLeft(2, '0')}/${data.year} - ${data.hour.toString().padLeft(2, '0')}:${data.minute.toString().padLeft(2, '0')}";
 
             String sottotitolo = "Camminata libera";
-            // Se in futuro re-integrerai l'umore post-attività nel modello, scommentalo qui:
-            /*if (attivita.umorePost != null) {
-              sottotitolo = "Umore: ${attivita.umorePost!.toUpperCase()}";
-            }*/
 
             return RouteCard(
               luogo: "Sessione del $dataStr",
@@ -128,7 +117,6 @@ class StoricoCardButtonsWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Bottone totalmente statico che si limita ad aprire il Dialog
     return SizedBox(
       width: double.infinity,
       height: 48,
@@ -138,7 +126,6 @@ class StoricoCardButtonsWidget extends StatelessWidget {
             context: context,
             builder: (context) => CondivisioneDialog(
               attivita: attivita,
-              /*umore: attivita.umorePost,*/
             ),
           );
         },

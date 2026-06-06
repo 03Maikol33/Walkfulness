@@ -39,7 +39,6 @@ class RouteCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // --- PARTE SUPERIORE: Immagine e Testo ---
           ClipRRect(
             borderRadius: const BorderRadius.only(
               topLeft: Radius.circular(32),
@@ -52,13 +51,10 @@ class RouteCard extends StatelessWidget {
               child: Stack(
                 fit: StackFit.expand,
                 children: [
-                  // Sfondo (Immagine o Colore)
                   if (imageAsset != null)
                     Image.asset(imageAsset!, fit: BoxFit.cover)
                   else
                     Container(color: theme.colorScheme.primary),
-
-                  // Gradiente per rendere il testo leggibile
                   DecoratedBox(
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
@@ -72,7 +68,6 @@ class RouteCard extends StatelessWidget {
                     ),
                   ),
 
-                  // Testo in basso a sinistra
                   Positioned(
                     bottom: 16,
                     left: 20,

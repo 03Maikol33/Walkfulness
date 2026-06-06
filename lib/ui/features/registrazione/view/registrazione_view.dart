@@ -10,7 +10,6 @@ class RegistrazioneView extends StatefulWidget {
 }
 
 class _RegistrazioneViewState extends State<RegistrazioneView> {
-  // Controller per catturare l'input
   final _nomeController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
@@ -20,7 +19,7 @@ class _RegistrazioneViewState extends State<RegistrazioneView> {
 
   @override
   void dispose() {
-    // Pulizia dei controller
+    // pulisce dei controller
     _nomeController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
@@ -58,8 +57,6 @@ class _RegistrazioneViewState extends State<RegistrazioneView> {
                 const Text("Unisciti alla tribù e inizia a seminare."),
 
                 const SizedBox(height: 40),
-
-                // Messaggio di errore dinamico
                 if (_viewModel.errorMessage != null)
                   Padding(
                     padding: const EdgeInsets.only(bottom: 16.0),
@@ -100,7 +97,6 @@ class _RegistrazioneViewState extends State<RegistrazioneView> {
                   width: double.infinity,
                   height: 55,
                   child: ElevatedButton(
-                    // [cite: 420, 424]
                     onPressed: _viewModel.isLoading
                         ? null
                         : () async {

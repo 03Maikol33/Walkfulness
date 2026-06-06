@@ -33,7 +33,6 @@ class UserRepository {
           uid: data?['uid'] ?? '',
           nome: data?['nome'] ?? '',
           email: data?['email'] ?? '',
-          // Castiamo a num e poi convertiamo in double per sicurezza
           kmPercorsi: (data?['kmPercorsi'] as num?)?.toDouble() ?? 0.0,
           livelloForesta: data?['livelloForesta'] ?? 1,
           oreInNatura: (data?['oreInNatura'] as num?)?.toDouble() ?? 0.0,
@@ -49,7 +48,6 @@ class UserRepository {
   }
 
   Future<void> updateProgress(String uid, double nuoviKm) async {
-    // Calcoliamo il nuovo livello con la stessa formula
     int nuovoLivello = (0.5 + sqrt(0.25 + 0.2 * nuoviKm)).floor();
 
     await _firestore.collection('users').doc(uid).update({

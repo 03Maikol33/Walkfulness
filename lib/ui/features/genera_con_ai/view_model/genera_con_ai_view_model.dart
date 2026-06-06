@@ -11,48 +11,13 @@ import 'package:walkfulness/ui/features/crea_tu/view_model/crea_tu_view_model.da
 class GeneraConAiViewModel extends ChangeNotifier {
   final GeminiService _geminiService = GeminiService();
   final MeteoService _meteoService = MeteoService();
-  final PoiService _poiService = PoiService();
 
   bool isLoading = false;
-  String? moodSelezionato;
-
-  final List<String> tagSelezionati = [];
-  final List<String> tagDisponibili = [
-    "Natura",
-    "Città",
-    "Montagna",
-    "Relax",
-    "Sport",
-    "Cultura",
-    "Mare",
-    "Bosco",
-  ];
-
-  final List<Map<String, String>> moods = [
-    {"label": "Rilassato", "emoji": "😌"},
-    {"label": "Stressato", "emoji": "😤"},
-    {"label": "Energico", "emoji": "⚡"},
-    {"label": "Triste", "emoji": "😔"},
-    {"label": "Riflessivo", "emoji": "🤔"},
-    {"label": "Ansioso", "emoji": "😰"},
-  ];
-
-  void selezionaMood(String mood) {
-    moodSelezionato = mood;
-    notifyListeners();
-  }
-
-  void toggleTag(String tag) {
-    if (tagSelezionati.contains(tag)) {
-      tagSelezionati.remove(tag);
-    } else {
-      tagSelezionati.add(tag);
-    }
-    notifyListeners();
-  }
-
-  Future<List<PinModel>?> generaItinerario(String noteAggiuntive) async {
-    if (moodSelezionato == null) return null;
+  Future<List<PinModel>?> generaItinerario(
+      String? moodSelezionato,
+      List<String> tagSelezionati,
+      String noteAggiuntive
+    ) async {
 
     isLoading = true;
     notifyListeners();

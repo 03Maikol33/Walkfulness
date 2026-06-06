@@ -2,9 +2,9 @@ import 'package:audioplayers/audioplayers.dart';
 import 'package:walkfulness/data/services/audio/tts_service.dart';
 
 class AudioManager {
-  // Livello 2 e 3 (Voce TTS)
+  //Voce TTS
   final AudioGuideService _tts = AudioGuideService();
-  // Livello 1 (Musica Ambientale)
+  //musica ambientale
   final AudioPlayer _ambientPlayer = AudioPlayer();
 
   double _volumeBase = 0.4;
@@ -15,17 +15,16 @@ class AudioManager {
     await _tts.inizializza();
     await _ambientPlayer.setReleaseMode(
       ReleaseMode.loop,
-    ); // La musica riparte da capo all'infinito
+    ); // loop per la musica
   }
 
-  // Permette all'utente di spegnere/accendere la voce
   void impostaStatoVoce(bool stato) {
     _tts.impostaStato(stato);
   }
 
-  // --- LAYER AMBIENTE ---
+
   Future<void> avviaSottofondoNaturale(String nomeFile) async {
-    await _ambientPlayer.setVolume(_volumeBase); // Volume di base morbido
+    await _ambientPlayer.setVolume(_volumeBase);
     await _ambientPlayer.play(AssetSource('audio/$nomeFile'));
   }
 
@@ -40,16 +39,13 @@ class AudioManager {
     await _ambientPlayer.stop();
   }
 
-  // --- LAYER VOCE (Con Ducking) ---
   Future<void> parla(String testo) async {
-    if (_isSpeaking) return; // Evita che le frasi si sovrappongano
+    if (_isSpeaking) return;
 
     _isSpeaking = true;
-    //Abbassa la musica ambientale
+    //abbassa musica ambientale
     await _ambientPlayer.setVolume(_volumeBase * 0.2);
-    //Fai parlare il TTS
     await _tts.parla(testo);
-    //Rialza la musica ambientale
     await _ambientPlayer.setVolume(_volumeBase);
     _isSpeaking = false;
   }

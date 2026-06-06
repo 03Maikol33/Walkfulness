@@ -72,7 +72,7 @@ class PoiService {
             }
           }
 
-          // FALLBACK SUI NOMI GENERICI ---
+          //fallback nomi generici
           //gli elementi trovati prima nessuno aveva un nome proprio.
           for (var el in elements) {
             if (el['tags'] != null) {

@@ -482,7 +482,6 @@ class SaveButtonWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     final primaryColor = Theme.of(context).colorScheme.primary;
 
-    // L'UNICO ListenableBuilder della pagina: in ascolto del viewModel.isLoading
     return ListenableBuilder(
       listenable: viewModel,
       builder: (context, _) {
@@ -493,6 +492,7 @@ class SaveButtonWidget extends StatelessWidget {
             onPressed: viewModel.isLoading
                 ? null
                 : () async {
+                    //salva dati
                     if (attivita.id != null) {
                       await viewModel.salvaQuestionario(
                         activityId: attivita.id!,
@@ -501,9 +501,11 @@ class SaveButtonWidget extends StatelessWidget {
                         elementiApprezzati: apprezzamentiSelezionati,
                       );
                     }
+
                     if (context.mounted) {
-                      Navigator.of(context).popUntil((route) => route.isFirst);
-                      context.read<MainWrapperViewModel>().cambiaPagina(0);
+                      final wrapperVm = context.read<MainWrapperViewModel>();
+                      wrapperVm.cambiaPagina(0);
+                      wrapperVm.chiudiPaginaInterna();
                     }
                   },
             style: ElevatedButton.styleFrom(

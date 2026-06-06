@@ -57,7 +57,7 @@ class CreaView extends StatelessWidget {
                       context.read<MainWrapperViewModel>().apriPaginaInterna(
                         const GeneraConAiView(),
                       );
-                    }, // Funzione vuota corretta
+                    },
                     colorOverride: theme.colorScheme.secondary,
                   ),
                 ),

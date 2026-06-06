@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -195,10 +197,7 @@ class _AttivitaViewState extends State<AttivitaView> {
   }
 }
 
-// ============================================================================
-// WIDGET COMPONENTI UI (Ora con l'ascolto granulare perfetto)
-// ============================================================================
-
+//Widget ui
 class MainStatsWidget extends StatelessWidget {
   final AttivitaViewModel viewModel;
   const MainStatsWidget({super.key, required this.viewModel});
@@ -206,67 +205,108 @@ class MainStatsWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return ListenableBuilder(
-      listenable: viewModel,
-      builder: (context, _) {
-        return Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 32),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                "SESSIONE IN CORSO",
-                style: TextStyle(
-                  letterSpacing: 1.5,
-                  fontSize: 12,
-                  color: theme.colorScheme.primary,
-                ),
-              ),
-              FittedBox(
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.baseline,
-                  textBaseline: TextBaseline.alphabetic,
-                  children: [
-                    Text(
-                      "${viewModel.durata.inMinutes.remainder(60).toString().padLeft(2, '0')}:${viewModel.durata.inSeconds.remainder(60).toString().padLeft(2, '0')}",
-                      style: GoogleFonts.notoSerif(
-                        fontSize: 64,
-                        fontWeight: FontWeight.bold,
-                        color: theme.colorScheme.primary,
-                      ),
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      "min",
-                      style: GoogleFonts.notoSerif(
-                        fontSize: 24,
-                        color: theme.colorScheme.primary,
-                      ),
-                    ),
-                    const SizedBox(width: 24),
-                    Text(
-                      viewModel.kmPercorsi.toStringAsFixed(1),
-                      style: GoogleFonts.notoSerif(
-                        fontSize: 64,
-                        fontWeight: FontWeight.bold,
-                        color: theme.colorScheme.primary,
-                      ),
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      "km",
-                      style: GoogleFonts.notoSerif(
-                        fontSize: 24,
-                        color: theme.colorScheme.primary,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 32),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            "SESSIONE IN CORSO",
+            style: TextStyle(
+              letterSpacing: 1.5,
+              fontSize: 12,
+              color: theme.colorScheme.primary,
+            ),
           ),
-        );
-      },
+          FittedBox(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.baseline,
+              textBaseline: TextBaseline.alphabetic,
+              children: [
+                ActivityTimerWidget(viewModel: viewModel),
+                const SizedBox(width: 24),
+                Text(
+                  viewModel.kmPercorsi.toStringAsFixed(1),
+                  style: GoogleFonts.notoSerif(
+                    fontSize: 64,
+                    fontWeight: FontWeight.bold,
+                    color: theme.colorScheme.primary,
+                  ),
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  "km",
+                  style: GoogleFonts.notoSerif(
+                    fontSize: 24,
+                    color: theme.colorScheme.primary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class ActivityTimerWidget extends StatefulWidget {
+  final AttivitaViewModel viewModel;
+  const ActivityTimerWidget({super.key, required this.viewModel});
+
+  @override
+  State<ActivityTimerWidget> createState() => _ActivityTimerWidgetState();
+}
+
+class _ActivityTimerWidgetState extends State<ActivityTimerWidget> {
+  Timer? _uiTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    _uiTimer = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (mounted && widget.viewModel.inCorso) {
+        setState(() {}); // agg ogni secondo
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _uiTimer?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final durata = widget.viewModel.durata;
+
+    final minuti = durata.inMinutes.remainder(60).toString().padLeft(2, '0');
+    final secondi = durata.inSeconds.remainder(60).toString().padLeft(2, '0');
+
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.baseline,
+      textBaseline: TextBaseline.alphabetic,
+      children: [
+        Text(
+          "$minuti:$secondi",
+          style: GoogleFonts.notoSerif(
+            fontSize: 64,
+            fontWeight: FontWeight.bold,
+            color: theme.colorScheme.primary,
+          ),
+        ),
+        const SizedBox(width: 4),
+        Text(
+          "min",
+          style: GoogleFonts.notoSerif(
+            fontSize: 24,
+            color: theme.colorScheme.primary,
+          ),
+        ),
+      ],
     );
   }
 }
@@ -334,7 +374,6 @@ class MapCardWidget extends StatelessWidget {
     return ListenableBuilder(
       listenable: viewModel,
       builder: (context, _) {
-        // IL CALCOLO VA MESSO QUI DENTRO PER AGGIORNARSI!
         LatLng centroIniziale = const LatLng(42.358246, 13.386197);
         if (viewModel.tracciaGps.isNotEmpty) {
           centroIniziale = LatLng(
@@ -500,7 +539,6 @@ class PlayerCardWidget extends StatelessWidget {
     return ListenableBuilder(
       listenable: viewModel,
       builder: (context, _) {
-        // IL CALCOLO VA MESSO QUI DENTRO PER AGGIORNARSI AL TOCCO!
         String nomeTraccia = "Silenzio";
         if (viewModel.tracciaAttiva != null) {
           final traccia = viewModel.tracceDisponibili.firstWhere(
@@ -591,7 +629,6 @@ class TerminateButtonWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Questo bottone NON ha bisogno di ListenableBuilder perché non mostra dati che cambiano!
     return SizedBox(
       width: 250,
       height: 60,

@@ -15,7 +15,6 @@ class StoricoAttivitaViewModel extends ChangeNotifier {
     notifyListeners();
 
     try {
-      // Usiamo il metodo che avevamo già creato nel repository!
       attivitaList = await _repository.getStoricoUtente(userId);
     } catch (e) {
       errorMessage = "Errore durante il caricamento dello storico.";

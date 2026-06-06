@@ -27,7 +27,6 @@ class ActivityRepository {
         ), //incrementa le ore in natura dell'utente
       });
 
-      // 4. Eseguiamo il batch
       await batch.commit();
       return activityRef.id;
     } catch (e) {

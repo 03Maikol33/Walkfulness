@@ -43,13 +43,13 @@ class PercorsiCommunityViewModel extends ChangeNotifier {
     notifyListeners();
 
     try {
-      //SCARICA DAL SERVER GIA' FILTRATI (Città + Tag)
+      //scarica i risultati filrtandoli direttamente
       List<PercorsoModel> scaricati = await _repository.getPercorsiCommunity(
         citta: cittaRicercata,
         tag: tagSelezionato,
       );
 
-      //ORDINA LOCALMENTE PER DISTANZA
+      //Ordinamento locale per distanza
       if (_posizioneAttuale != null && scaricati.isNotEmpty) {
         final posUtente = GeoPoint(
           _posizioneAttuale!.latitude,

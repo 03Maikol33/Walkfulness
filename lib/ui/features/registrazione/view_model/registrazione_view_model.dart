@@ -16,7 +16,7 @@ class RegistrazioneViewModel extends ChangeNotifier {
     required String confermaPassword,
     required String nome,
   }) async {
-    // 1. Validazione delle password
+    //validazione psswrd
     if (password != confermaPassword) {
       errorMessage = "Le password non coincidono.";
       notifyListeners();
@@ -34,7 +34,7 @@ class RegistrazioneViewModel extends ChangeNotifier {
     notifyListeners(); 
 
     try {
-      // 2. Registrazione su Firebase Auth
+      // registrazione con Firebase Authentication
       final user = await _authService.register(email, password);
 
       if (user != null) {
@@ -42,9 +42,6 @@ class RegistrazioneViewModel extends ChangeNotifier {
           uid: user.uid,
           nome: nome,
           email: email,
-          // 'kmPercorsi': 0, Valori di default
-          // 'livelloForesta': 1, Valori di default
-          //'oreInNatura': 0, Valori di default
         );
 
         await _userRepository.createUser(nuovoUtente);
@@ -54,8 +51,6 @@ class RegistrazioneViewModel extends ChangeNotifier {
         return true;
       }
     } on FirebaseAuthException catch (e) {
-      // 2. GESTIONE CODICI ERRORE SPECIFICI
-      //non arriva mai a questo punto, sembra che FirebaseAuthException non venga catturata, forse è un problema di import o di versione del pacchetto
       if (e.code == 'email-already-in-use') {
         errorMessage = "L'indirizzo email è già in uso.";
       } else if (e.code == 'weak-password') {

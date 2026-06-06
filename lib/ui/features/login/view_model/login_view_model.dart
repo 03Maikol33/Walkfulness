@@ -10,7 +10,7 @@ class LoginViewModel extends ChangeNotifier {
 
   Future<bool> accedi(String email, String password) async {
     isLoading = true;
-    errorMessage = null; // Resetta l'errore precedente
+    errorMessage = null; // resetta l'errore precedente
     notifyListeners();
 
     try {

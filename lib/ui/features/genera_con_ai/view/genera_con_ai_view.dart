@@ -17,11 +17,37 @@ class _GeneraConAiViewState extends State<GeneraConAiView> {
   final TextEditingController _noteController = TextEditingController();
   late GeneraConAiViewModel _viewModel;
 
+  //stato locale della ui
+  String? moodSelezionato;
+  final List<String> tagSelezionati = [];
+
+  final List<String> tagDisponibili = [
+    "Natura",
+    "Città",
+    "Montagna",
+    "Relax",
+    "Sport",
+    "Cultura",
+    "Mare",
+    "Bosco",
+  ];
+
+  final List<Map<String, String>> moods = [
+    {"label": "Rilassato", "emoji": "😌"},
+    {"label": "Stressato", "emoji": "😤"},
+    {"label": "Energico", "emoji": "⚡"},
+    {"label": "Triste", "emoji": "😔"},
+    {"label": "Riflessivo", "emoji": "🤔"},
+    {"label": "Ansioso", "emoji": "😰"},
+  ];
+  //********** */
+
   @override
   void initState() {
     super.initState();
 
-    _viewModel = widget.viewModelOverride ?? GeneraConAiViewModel();
+    _viewModel =
+        widget.viewModelOverride ?? GeneraConAiViewModel(); //per il testing
   }
 
   @override
@@ -35,7 +61,6 @@ class _GeneraConAiViewState extends State<GeneraConAiView> {
     final theme = Theme.of(context);
     final primary = theme.colorScheme.primary;
 
-    // Usiamo .value perché l'istanza è già stata creata nell'initState
     return ChangeNotifierProvider<GeneraConAiViewModel>.value(
       value: _viewModel,
       child: Scaffold(
@@ -64,57 +89,53 @@ class _GeneraConAiViewState extends State<GeneraConAiView> {
               const Text("Scegli un'emozione per iniziare."),
               const SizedBox(height: 20),
 
-              // 1. GRID DEI MOOD
-              Consumer<GeneraConAiViewModel>(
-                builder: (context, vm, _) {
-                  return GridView.builder(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    gridDelegate:
-                        const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 3,
-                          crossAxisSpacing: 12,
-                          mainAxisSpacing: 12,
-                          childAspectRatio: 1.1,
-                        ),
-                    itemCount: vm.moods.length,
-                    itemBuilder: (context, index) {
-                      final mood = vm.moods[index];
-                      final isSelected = vm.moodSelezionato == mood['label'];
-                      return InkWell(
-                        onTap: () => vm.selezionaMood(mood['label']!),
+              //selettore mood
+              GridView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 3,
+                  crossAxisSpacing: 12,
+                  mainAxisSpacing: 12,
+                  childAspectRatio: 1.1,
+                ),
+                itemCount: moods.length,
+                itemBuilder: (context, index) {
+                  final mood = moods[index];
+                  final isSelected = moodSelezionato == mood['label'];
+                  return InkWell(
+                    onTap: () => setState(() {
+                      //set state locale alla ui
+                      moodSelezionato = mood['label'];
+                    }),
+                    borderRadius: BorderRadius.circular(20),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: isSelected ? primary : Colors.white,
                         borderRadius: BorderRadius.circular(20),
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: isSelected ? primary : Colors.white,
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(
-                              color: isSelected
-                                  ? primary
-                                  : Colors.grey.shade200,
+                        border: Border.all(
+                          color: isSelected ? primary : Colors.grey.shade200,
+                        ),
+                      ),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            mood['emoji']!,
+                            style: const TextStyle(fontSize: 24),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            mood['label']!,
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              color: isSelected ? Colors.white : primary,
                             ),
                           ),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Text(
-                                mood['emoji']!,
-                                style: const TextStyle(fontSize: 24),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                mood['label']!,
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.bold,
-                                  color: isSelected ? Colors.white : primary,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      );
-                    },
+                        ],
+                      ),
+                    ),
                   );
                 },
               ),
@@ -130,30 +151,33 @@ class _GeneraConAiViewState extends State<GeneraConAiView> {
               ),
               const SizedBox(height: 12),
 
-              // 2. TAG AMBIENTALI
-              Consumer<GeneraConAiViewModel>(
-                builder: (context, vm, _) {
-                  return Wrap(
-                    spacing: 8,
-                    children: vm.tagDisponibili.map((tag) {
-                      final isSelected = vm.tagSelezionati.contains(tag);
-                      return FilterChip(
-                        label: Text(tag),
-                        selected: isSelected,
-                        onSelected: (_) => vm.toggleTag(tag),
-                        selectedColor: primary,
-                        checkmarkColor: Colors.white,
-                        labelStyle: TextStyle(
-                          fontSize: 12,
-                          color: isSelected ? Colors.white : Colors.black87,
-                        ),
-                        side: BorderSide.none,
-                        shape: const StadiumBorder(),
-                        backgroundColor: Colors.white,
-                      );
-                    }).toList(),
+              //tag ambientali
+              Wrap(
+                spacing: 8,
+                children: tagDisponibili.map((tag) {
+                  final isSelected = tagSelezionati.contains(tag);
+                  return FilterChip(
+                    label: Text(tag),
+                    selected: isSelected,
+                    onSelected: (selected) => setState(() {
+                      //set state locale alla ui
+                      if (selected) {
+                        tagSelezionati.add(tag);
+                      } else {
+                        tagSelezionati.remove(tag);
+                      }
+                    }),
+                    selectedColor: primary,
+                    checkmarkColor: Colors.white,
+                    labelStyle: TextStyle(
+                      fontSize: 12,
+                      color: isSelected ? Colors.white : Colors.black87,
+                    ),
+                    side: BorderSide.none,
+                    shape: const StadiumBorder(),
+                    backgroundColor: Colors.white,
                   );
-                },
+                }).toList(),
               ),
               const SizedBox(height: 32),
 
@@ -186,17 +210,20 @@ class _GeneraConAiViewState extends State<GeneraConAiView> {
               ),
               const SizedBox(height: 40),
 
-              // 3. BOTTONE GENERA
+              //genera btn
               Consumer<GeneraConAiViewModel>(
+                //lìunico componente ui che ascolta il vm per il caricamento
                 builder: (context, vm, _) {
                   return SizedBox(
                     width: double.infinity,
                     height: 60,
                     child: ElevatedButton(
-                      onPressed: (vm.moodSelezionato == null || vm.isLoading)
+                      onPressed: (moodSelezionato == null || vm.isLoading)
                           ? null
                           : () async {
                               final percorso = await vm.generaItinerario(
+                                moodSelezionato,
+                                tagSelezionati,
                                 _noteController.text,
                               );
                               if (percorso != null && context.mounted) {

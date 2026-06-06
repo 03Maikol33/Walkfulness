@@ -23,7 +23,7 @@ class QuestionarioViewModel extends ChangeNotifier {
         dati['elementiApprezzati'] = elementiApprezzati;
       }
 
-      // Aggiorna l'attività solo se l'utente ha inserito almeno un feedback
+      // aggiorna l'attività solo se l'utente ha inserito almeno un feedback
       if (dati.isNotEmpty) {
         await _repository.aggiornaQuestionario(activityId, dati);
       }

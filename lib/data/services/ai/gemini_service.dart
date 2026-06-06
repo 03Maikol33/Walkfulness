@@ -7,7 +7,6 @@ class GeminiService {
   late final GenerativeModel _model;
 
   GeminiService() {
-    // Si aggancia automaticamente a Firebase tramite il provider Gemini Developer API
     _model = FirebaseAI.googleAI().generativeModel(
       model: 'gemini-3.1-flash-lite',
     );

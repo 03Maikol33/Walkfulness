@@ -5,7 +5,6 @@ import 'package:walkfulness/domain/models/user_model.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 class ForestaViewModel extends ChangeNotifier {
-  //final AuthService _authService = AuthService();
   final UserRepository _userRepository = UserRepository();
   UserModel? _utente;
   bool isLoading = false;

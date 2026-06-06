@@ -24,7 +24,6 @@ class PercorsoRepository {
     }
   }
 
-  //PERCORSI DELLA COMMUNITY
   // Estrae tutti i percorsi che hanno il flag isPublic a true
   Future<List<PercorsoModel>> getPercorsiCommunity({
     String? citta,

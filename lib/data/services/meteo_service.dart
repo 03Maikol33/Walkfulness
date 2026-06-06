@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 import 'package:latlong2/latlong.dart';
 
 class MeteoService {
-  // Ottiene una stringa descrittiva del meteo attuale
+  //stringa descrittiva del meteo attuale
   Future<String> ottieniCondizioniAttuali(LatLng coordinate) async {
     final url = Uri.parse(
       'https://api.open-meteo.com/v1/forecast?latitude=${coordinate.latitude}&longitude=${coordinate.longitude}&current_weather=true',
@@ -22,11 +22,10 @@ class MeteoService {
     } catch (e) {
       print("[METEO SERVICE] Errore: $e");
     }
-    return "Condizioni climatiche stabili, temperatura mite."; // Fallback
+    return "Condizioni climatiche stabili, temperatura mite.";
   }
 
   String _decodificaMeteo(int code) {
-    // Codici WMO (Organizzazione Meteorologica Mondiale)
     if (code == 0) return "Cielo sereno";
     if (code >= 1 && code <= 3) return "Parzialmente nuvoloso";
     if (code >= 45 && code <= 48) return "Nebbia";

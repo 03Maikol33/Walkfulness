@@ -2,9 +2,9 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 class PercorsoModel {
   final String? id;
-  final String utenteId; // ID dell'utente che ha creato il percorso
+  final String utenteId; // id dell'utente che ha creato il percorso
   final String nome;
-  final String nomeCreatore; // Nome dell'utente che ha creato il percorso
+  final String nomeCreatore; // nome dell'utente che ha creato il percorso
   final List<Map<String, dynamic>> tappe;
   final String? dataCreazione;
   bool isPublic;
@@ -19,7 +19,7 @@ class PercorsoModel {
     required this.tappe,
     this.nomeCreatore = "Sconosciuto",
     this.dataCreazione,
-    this.isPublic = false, // Di default i percorsi sono privati
+    this.isPublic = false, //default i percorsi sono privati
     this.citta = "",
     this.tags = const [],
   });

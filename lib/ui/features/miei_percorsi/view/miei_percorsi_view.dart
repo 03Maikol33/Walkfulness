@@ -31,8 +31,6 @@ class _MieiPercorsiViewState extends State<MieiPercorsiView> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-
-    // BUILD PRINCIPALE STATICO (Nessun ListenableBuilder globale!)
     return Scaffold(
       backgroundColor: const Color(0xFFF7FBF8),
       body: Column(
@@ -49,10 +47,10 @@ class _MieiPercorsiViewState extends State<MieiPercorsiView> {
             ),
           ),
 
-          // LA LISTA (Ascolta il caricamento e i dati)
+          // La liosta scolta il caricamento e i dati
           Expanded(child: RouteListWidget(viewModel: _viewModel)),
 
-          // I FILTRI (Ascoltano lo stato Pubblico/Privato)
+          // I fitrli ascoltano lo stato Pubblico/Privato
           FilterSectionWidget(viewModel: _viewModel),
         ],
       ),
@@ -60,9 +58,7 @@ class _MieiPercorsiViewState extends State<MieiPercorsiView> {
   }
 }
 
-// ============================================================================
-// WIDGET ESTRATTI E OTTIMIZZATI CON ASCOLTO GRANULARE
-// ============================================================================
+// widget componenti UI
 
 class RouteListWidget extends StatelessWidget {
   final MieiPercorsiViewModel viewModel;

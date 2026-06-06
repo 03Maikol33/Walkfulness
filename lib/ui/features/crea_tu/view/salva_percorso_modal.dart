@@ -52,7 +52,7 @@ class _SalvaPercorsoModalState extends State<SalvaPercorsoModal> {
         padding: const EdgeInsets.all(24.0),
         child: Column(
           mainAxisSize:
-              MainAxisSize.min, // Occupa solo lo spazio necessario in verticale
+              MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Center(
@@ -75,7 +75,7 @@ class _SalvaPercorsoModalState extends State<SalvaPercorsoModal> {
             ),
             const SizedBox(height: 24),
 
-            // NOME PERCORSO
+            //nome del percorso
             TextField(
               controller: _nomeController,
               decoration: InputDecoration(
@@ -127,7 +127,7 @@ class _SalvaPercorsoModalState extends State<SalvaPercorsoModal> {
             ),
             const SizedBox(height: 24),
 
-            // VISIBILITÀ
+            // Visibilità
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
@@ -151,7 +151,7 @@ class _SalvaPercorsoModalState extends State<SalvaPercorsoModal> {
 
             const SizedBox(height: 32),
 
-            // BOTTONE SALVA
+            // salva btn
             SizedBox(
               width: double.infinity,
               height: 55,
@@ -165,8 +165,6 @@ class _SalvaPercorsoModalState extends State<SalvaPercorsoModal> {
                     );
                     return;
                   }
-
-                  // Usiamo widget.viewModel che abbiamo passato nel costruttore
                   final successo = await widget.viewModel
                       .salvaPercorsoConDettagli(
                         context: context,

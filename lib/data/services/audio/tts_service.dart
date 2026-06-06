@@ -6,7 +6,7 @@ class AudioGuideService {
 
   Future<void> inizializza() async {
     await _flutterTts.setLanguage("it-IT");
-    await _flutterTts.setSpeechRate(0.4); // Velocità lenta e rilassante
+    await _flutterTts.setSpeechRate(0.4); //  lenta
     await _flutterTts.setPitch(0.8);
 
     await _flutterTts.awaitSpeakCompletion(
@@ -27,7 +27,7 @@ class AudioGuideService {
       if (vociItaliane.isNotEmpty) {
         var voceMigliore = vociItaliane.firstWhere(
           (v) => v["name"].toString().contains("network"),
-          orElse: () => vociItaliane.first, // Fallback alla prima disponibile
+          orElse: () => vociItaliane.first, // fallback alla prima disponibile
         );
 
         await _flutterTts.setVoice({
@@ -47,7 +47,7 @@ class AudioGuideService {
   bool get isAttiva => _isAttiva;
 
   Future<void> parla(String testo) async {
-    if (!_isAttiva) return; // Se l'utente l'ha disattivata, tace.
+    if (!_isAttiva) return; // Se l'utente l'ha disattivata allora non parla
     await _flutterTts.speak(testo);
   }
 

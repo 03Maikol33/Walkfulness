@@ -41,9 +41,7 @@ class CreaTuViewModel extends ChangeNotifier {
   StreamSubscription<Position>? _positionSubscription;
 
   //costruttore
-  CreaTuViewModel() {
-    //_inizializzaPosizioneUtente();
-  }
+  CreaTuViewModel() {}
 
   void inizializza() {
     _inizializzaPosizioneUtente();
@@ -51,7 +49,7 @@ class CreaTuViewModel extends ChangeNotifier {
 
   void cambiaTipoRouting(int index) {
     if (index >= pinSelezionati.length - 1) {
-      return; // L'ultimo pin non va da nessuna parte
+      return;
     }
 
     final pin = pinSelezionati[index];
@@ -91,7 +89,6 @@ class CreaTuViewModel extends ChangeNotifier {
           accuracy: LocationAccuracy.high,
           distanceFilter: 3,
         ),
-        //desiredAccuracy: LocationAccuracy.high,
       );
       posizioneUtente = LatLng(position.latitude, position.longitude);
       mapController.move(posizioneUtente!, 15.0);
@@ -112,12 +109,11 @@ class CreaTuViewModel extends ChangeNotifier {
     }
   }
 
-  // RICERCA LUOGHI (API Nominatim)
+  // cercha i luoghi con API Nominatim
   Future<void> cercaEAggiungiLuogo(String query) async {
     if (query.trim().isEmpty) return;
 
     print("Ricerca in corso per: $query...");
-    // Chiamata all'API gratuita di OpenStreetMap
     final url = Uri.parse(
       'https://nominatim.openstreetmap.org/search?q=$query&format=json&limit=1',
     );
@@ -127,7 +123,7 @@ class CreaTuViewModel extends ChangeNotifier {
         url,
         headers: {
           'User-Agent':
-              'WalkfulnessApp/1.0', // Nominatim richiede un User-Agent
+              'WalkfulnessApp/1.0',
         },
       );
 
@@ -137,14 +133,10 @@ class CreaTuViewModel extends ChangeNotifier {
           final result = data[0];
           final lat = double.parse(result['lat']);
           final lon = double.parse(result['lon']);
-          // Estrapoliamo un nome pulito (prima della virgola)
           final nomeLuogo = result['display_name'].toString().split(',').first;
 
-          // Creiamo il punto e spostiamo la mappa
           final puntoTrovato = LatLng(lat, lon);
           mapController.move(puntoTrovato, 16.0);
-
-          // Aggiungiamo il pin col nome reale appena trovato!
           final nuovoPin = PinModel(coordinate: puntoTrovato, nome: nomeLuogo);
           pinSelezionati.add(nuovoPin);
           _aggiornaInterfaccia();
@@ -165,7 +157,7 @@ class CreaTuViewModel extends ChangeNotifier {
     if (pinSelezionati.length < 2) return false;
 
     try {
-      // Mappiamo i Pin nel formato corretto per Firebase
+      // mappa i pin nel formato corretto per Firebase
       final tappeFirebase = pinSelezionati
           .map(
             (pin) => {
@@ -188,7 +180,7 @@ class CreaTuViewModel extends ChangeNotifier {
       List<String> tags = [
         "Natura",
         "Relax",
-      ]; // TODO: Aggiungere selezione tag da UI
+      ];
 
       final nuovoPercorso = PercorsoModel(
         utenteId: utenteId,
@@ -253,7 +245,7 @@ class CreaTuViewModel extends ChangeNotifier {
             context.read<UserProvider>().utente?.nome ?? "Sconosciuto",
         citta: cittaRilevata,
         tags: tags,
-        isPublic: isPublic, // Passiamo il valore scelto dall'utente
+        isPublic: isPublic,
       );
 
       await FirebaseFirestore.instance
@@ -320,36 +312,36 @@ class CreaTuViewModel extends ChangeNotifier {
     lineePercorso.clear();
 
     if (pinSelezionati.length >= 2) {
-      // Analizziamo il percorso a segmenti (Pin 0 -> Pin 1, Pin 1 -> Pin 2, ecc.)
+      //analizza il percorso segmento per segmento
       for (int i = 0; i < pinSelezionati.length - 1; i++) {
         final startPin = pinSelezionati[i];
         final endPin = pinSelezionati[i + 1];
 
         if (startPin.tipoRottaVersoProssimo == TipoRouting.automatico) {
-          // --- ROUTING OSRM CON EFFETTO GLOWING AI ---
+          // routing automatico con OSRM
           final punti = await _routingService.calcolaOSRM(
             startPin.coordinate,
             endPin.coordinate,
           );
 
-          // 1. L'Alone (Spesso e semitrasparente)
+          // effetto alone trasparente
           lineePercorso.add(
             Polyline(
               points: punti,
-              color: Colors.white, // Segnale per ShaderMask
+              color: Colors.white, // colore catturato da ShaderMask
               strokeWidth: 10.0,
             ),
           );
-          // 2. Il Nucleo (Sottile e brillante)
+          // centro linea
           lineePercorso.add(
             Polyline(
               points: punti,
-              color: Colors.white, // Segnale per ShaderMask
+              color: Colors.white,
               strokeWidth: 1.0,
             ),
           );
         } else {
-          // --- ROUTING LINEA D'ARIA (TRATTEGGIATA) ---
+          // Routing in line d'aria
           final punti = _routingService.calcolaLineaAria(
             startPin.coordinate,
             endPin.coordinate,
@@ -374,7 +366,6 @@ class CreaTuViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  // Corretta gestione degli indici per il riordinamento
   void riordinaPin(int oldIndex, int newIndex) {
     if (oldIndex < newIndex) {
       newIndex -= 1;

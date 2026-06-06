@@ -24,7 +24,6 @@ class _PercorsiCommunityViewState extends State<PercorsiCommunityView> {
 
   @override
   Widget build(BuildContext context) {
-    // IL BUILD PRINCIPALE È ORA PULITO, STATICO E COMPOSITIVO
     return Scaffold(
       backgroundColor: const Color(0xFFF7FBF8),
       body: SafeArea(
@@ -34,8 +33,6 @@ class _PercorsiCommunityViewState extends State<PercorsiCommunityView> {
             const CommunityTitleWidget(),
             CommunitySearchBarWidget(viewModel: _viewModel),
             CommunityTagFilterWidget(viewModel: _viewModel),
-
-            // L'area scrollabile dedicata solo alle card!
             Expanded(child: CommunityRouteListWidget(viewModel: _viewModel)),
           ],
         ),
@@ -44,16 +41,14 @@ class _PercorsiCommunityViewState extends State<PercorsiCommunityView> {
   }
 }
 
-// ============================================================================
-// WIDGET ESTRATTI E OTTIMIZZATI CON ASCOLTO GRANULARE
-// ============================================================================
+// widget componenti UI
 
 class CommunityTitleWidget extends StatelessWidget {
   const CommunityTitleWidget({super.key});
 
   @override
   Widget build(BuildContext context) {
-    // Widget puramente statico
+    //statico
     final theme = Theme.of(context);
     return Padding(
       padding: const EdgeInsets.fromLTRB(24, 20, 24, 10),
@@ -74,7 +69,7 @@ class CommunitySearchBarWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // La barra comunica col ViewModel (onSubmitted) ma non ha bisogno di ascoltarlo
+    // La barra comunica col ViewModel onSubmitted ma non ascolta
     return Container(
       margin: const EdgeInsets.fromLTRB(20, 0, 20, 16),
       decoration: BoxDecoration(
@@ -108,7 +103,7 @@ class CommunityTagFilterWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Ascolta il ViewModel SOLO per capire quale tag evidenziare
+    // Ascolta il ViewModel per capire quale tag evidenziare
     return ListenableBuilder(
       listenable: viewModel,
       builder: (context, _) {
@@ -153,7 +148,7 @@ class CommunityRouteListWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Ascolta il ViewModel per mostrare la rotellina, gli errori o le Card
+    // Ascolta il ViewModel per mostrare la rotellina gli errori o le Card
     return ListenableBuilder(
       listenable: viewModel,
       builder: (context, _) {
@@ -209,7 +204,6 @@ class CommunityCardActionButtons extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // I bottoni sono statici, si limitano a inviare il percorso al Navigator
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [

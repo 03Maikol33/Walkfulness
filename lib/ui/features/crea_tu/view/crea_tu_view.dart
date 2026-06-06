@@ -27,19 +27,33 @@ class _CreaTuViewState extends State<CreaTuView>
   bool _isReady = false;
   late AnimationController _animationController;
 
+  //variabili d'appoggio per leggere gli argomenti passati dopo la creazione della mappa
+  Object? argsPendenti;
+  bool _argomentiLetti = false;
+
   @override
   void initState() {
     super.initState();
     _animationController = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 3),
-    )..repeat(); // fa scorrere il gradiente all'infinito
+    )..repeat();
 
     Future.delayed(const Duration(milliseconds: 350), () {
       if (mounted) {
-        // accende la posizione solo dopo che la schermata è stata disegnata, per evitare problemi di lag
         setState(() => _isReady = true);
-        _viewModel.inizializza(); // Ora possiamo accendere il GPS in sicurezza
+
+        // aspetta la fine del frame per assicurarci che la mappa sia già renderizzata
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          _viewModel.inizializza();
+          if (argsPendenti != null) {
+            if (argsPendenti is PercorsoModel) {
+              _viewModel.caricaPercorsoEsistente(argsPendenti as PercorsoModel);
+            } else if (argsPendenti is List<PinModel>) {
+              _viewModel.caricaPercorsoGenerato(argsPendenti as List<PinModel>);
+            }
+          }
+        });
       }
     });
   }
@@ -54,31 +68,12 @@ class _CreaTuViewState extends State<CreaTuView>
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-
-    //legge gli argomenti dalla navigazione classica
-    Object? args = ModalRoute.of(context)?.settings.arguments;
-
-    // se non li trova prova a leggerli dal MainWrapper navigazione interna
-    if (args == null) {
-      args = Provider.of<MainWrapperViewModel>(
-        context,
-        listen: false,
-      ).arguments;
-    }
-
-    //cerca il percorso da modificare
-    if (args != null && args is PercorsoModel) {
-      // microtask per evitare conflitti mentre Flutter sta disegnando l'interfaccia
-      Future.microtask(() {
-        _viewModel.caricaPercorsoEsistente(args as PercorsoModel);
-      });
-    }
-
-    //vede se ha ricevuto un percorso dall'ai
-    if (args != null && args is List<PinModel>) {
-      Future.microtask(() {
-        _viewModel.caricaPercorsoGenerato(args as List<PinModel>);
-      });
+    // legge gli argomenti
+    if (!_argomentiLetti) {
+      _argomentiLetti = true;
+      argsPendenti =
+          ModalRoute.of(context)?.settings.arguments ??
+          Provider.of<MainWrapperViewModel>(context, listen: false).arguments;
     }
   }
 
@@ -91,54 +86,68 @@ class _CreaTuViewState extends State<CreaTuView>
       );
     }
 
-    Object? args = ModalRoute.of(context)?.settings.arguments ??
-        Provider.of<MainWrapperViewModel>(context, listen: false).arguments;
-    bool isDettaglio = args != null;
+    bool isDettaglio = argsPendenti != null;
 
     final altezzaSchermo = MediaQuery.of(context).size.height;
     final altezzaContratta = 250.0;
     final altezzaEspansa = altezzaSchermo - 330.0;
     final altezzaAttuale = _isEspanso ? altezzaEspansa : altezzaContratta;
 
-    // NOTA IL BUILD PRINCIPALE: Non c'è più il ListenableBuilder globale! 
-    // Questa struttura è fissa. I cambiamenti avvengono solo nei nodi "foglia".
     return Scaffold(
       backgroundColor: const Color(0xFFF7FBF8),
       body: SafeArea(
         child: Column(
           children: [
             HeaderWidget(isDettaglio: isDettaglio),
-            
+
             Expanded(
               child: Stack(
                 children: [
-                  MapLayerWidget(viewModel: _viewModel, animationController: _animationController),
+                  MapLayerWidget(
+                    viewModel: _viewModel,
+                    animationController: _animationController,
+                  ),
                   LoadingOverlayWidget(viewModel: _viewModel),
-                  
-                  // IL MENU INFERIORE CHE SI ESPANDE (Gestisce il suo stato interno UI)
+
+                  //menu inferiore espandibile
                   Positioned(
-                    left: 0, right: 0, bottom: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
                     child: AnimatedContainer(
                       duration: const Duration(milliseconds: 300),
                       curve: Curves.easeOutCubic,
                       height: altezzaAttuale,
                       decoration: const BoxDecoration(
                         color: Colors.white,
-                        borderRadius: BorderRadius.vertical(top: Radius.circular(40)),
-                        boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 10, offset: Offset(0, -3))],
+                        borderRadius: BorderRadius.vertical(
+                          top: Radius.circular(40),
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black12,
+                            blurRadius: 10,
+                            offset: Offset(0, -3),
+                          ),
+                        ],
                       ),
                       child: Column(
                         children: [
                           HandleAreaWidget(
                             viewModel: _viewModel,
                             isEspanso: _isEspanso,
-                            onToggle: () => setState(() => _isEspanso = !_isEspanso),
+                            onToggle: () =>
+                                setState(() => _isEspanso = !_isEspanso),
                             onDragEnd: (details) {
-                              if (details.primaryVelocity! < -100) setState(() => _isEspanso = true);
-                              else if (details.primaryVelocity! > 100) setState(() => _isEspanso = false);
+                              if (details.primaryVelocity! < -100)
+                                setState(() => _isEspanso = true);
+                              else if (details.primaryVelocity! > 100)
+                                setState(() => _isEspanso = false);
                             },
                           ),
-                          SearchBarWidget(onSearch: _viewModel.cercaEAggiungiLuogo),
+                          SearchBarWidget(
+                            onSearch: _viewModel.cercaEAggiungiLuogo,
+                          ),
                           Expanded(child: PinListWidget(viewModel: _viewModel)),
                           ActionButtonsWidget(viewModel: _viewModel),
                         ],
@@ -155,15 +164,14 @@ class _CreaTuViewState extends State<CreaTuView>
   }
 }
 
-  // --- COMPONENTI UI ---
+//widget componenti dell'ui
 
- class HeaderWidget extends StatelessWidget {
+class HeaderWidget extends StatelessWidget {
   final bool isDettaglio;
   const HeaderWidget({super.key, required this.isDettaglio});
 
   @override
   Widget build(BuildContext context) {
-    // È statico, non ascolta il ViewModel
     final theme = Theme.of(context);
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -171,7 +179,9 @@ class _CreaTuViewState extends State<CreaTuView>
         children: [
           Text(
             isDettaglio ? "Dettagli percorso" : "Crea percorso",
-            style: theme.textTheme.headlineLarge?.copyWith(color: const Color(0xFF012D1C)),
+            style: theme.textTheme.headlineLarge?.copyWith(
+              color: const Color(0xFF012D1C),
+            ),
           ),
         ],
       ),
@@ -182,8 +192,12 @@ class _CreaTuViewState extends State<CreaTuView>
 class MapLayerWidget extends StatelessWidget {
   final CreaTuViewModel viewModel;
   final AnimationController animationController;
-  
-  const MapLayerWidget({super.key, required this.viewModel, required this.animationController});
+
+  const MapLayerWidget({
+    super.key,
+    required this.viewModel,
+    required this.animationController,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -205,7 +219,9 @@ class MapLayerWidget extends StatelessWidget {
               userAgentPackageName: 'com.walkfulness.app',
             ),
             PolylineLayer(
-              polylines: viewModel.lineePercorso.where((p) => p.color != Colors.white).toList(),
+              polylines: viewModel.lineePercorso
+                  .where((p) => p.color != Colors.white)
+                  .toList(),
             ),
             AnimatedBuilder(
               animation: animationController,
@@ -213,16 +229,33 @@ class MapLayerWidget extends StatelessWidget {
                 return ShaderMask(
                   shaderCallback: (rect) {
                     return LinearGradient(
-                      begin: Alignment.topLeft, end: Alignment.bottomRight,
-                      transform: GradientRotation(animationController.value * 2 * 3.14),
-                      colors: const [Color(0xFF001F12), Color(0xFF00695C), Color(0xFF00E5FF), Color(0xFF7C4DFF), Color(0xFFFF4081), Color(0xFFFFD740)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      transform: GradientRotation(
+                        animationController.value * 2 * 3.14,
+                      ),
+                      colors: const [
+                        Color(0xFF001F12),
+                        Color(0xFF00695C),
+                        Color(0xFF00E5FF),
+                        Color(0xFF7C4DFF),
+                        Color(0xFFFF4081),
+                        Color(0xFFFFD740),
+                      ],
                       stops: const [0.0, 0.2, 0.4, 0.6, 0.8, 1.0],
                     ).createShader(rect);
                   },
                   child: PolylineLayer(
-                    polylines: viewModel.lineePercorso.where((p) => p.color == Colors.white).map(
-                      (p) => Polyline(points: p.points, strokeWidth: p.strokeWidth, color: Colors.white),
-                    ).toList(),
+                    polylines: viewModel.lineePercorso
+                        .where((p) => p.color == Colors.white)
+                        .map(
+                          (p) => Polyline(
+                            points: p.points,
+                            strokeWidth: p.strokeWidth,
+                            color: Colors.white,
+                          ),
+                        )
+                        .toList(),
                   ),
                 );
               },
@@ -231,12 +264,16 @@ class MapLayerWidget extends StatelessWidget {
               markers: [
                 if (viewModel.posizioneUtente != null)
                   Marker(
-                    point: viewModel.posizioneUtente!, width: 24, height: 24,
+                    point: viewModel.posizioneUtente!,
+                    width: 24,
+                    height: 24,
                     child: _buildUserLocationMarker(cyanPrimary),
                   ),
                 ...viewModel.pinSelezionati.asMap().entries.map((entry) {
                   return Marker(
-                    point: entry.value.coordinate, width: 35, height: 35,
+                    point: entry.value.coordinate,
+                    width: 35,
+                    height: 35,
                     child: _buildMapMarker(cyanPrimary, entry.key + 1),
                   );
                 }),
@@ -244,15 +281,23 @@ class MapLayerWidget extends StatelessWidget {
             ),
           ],
         );
-      }
+      },
     );
   }
 
   Widget _buildUserLocationMarker(Color color) {
     return Container(
       decoration: BoxDecoration(
-        color: color, shape: BoxShape.circle, border: Border.all(color: Colors.white, width: 3),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.3), blurRadius: 4, offset: const Offset(0, 2))],
+        color: color,
+        shape: BoxShape.circle,
+        border: Border.all(color: Colors.white, width: 3),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.3),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
     );
   }
@@ -260,11 +305,20 @@ class MapLayerWidget extends StatelessWidget {
   Widget _buildMapMarker(Color primary, int numero) {
     return Container(
       decoration: BoxDecoration(
-        color: primary, shape: BoxShape.circle, border: Border.all(color: Colors.white, width: 3),
+        color: primary,
+        shape: BoxShape.circle,
+        border: Border.all(color: Colors.white, width: 3),
         boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 4)],
       ),
       child: Center(
-        child: Text("$numero", style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12)),
+        child: Text(
+          "$numero",
+          style: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+            fontSize: 12,
+          ),
+        ),
       ),
     );
   }
@@ -277,12 +331,12 @@ class LoadingOverlayWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cyanPrimary = Theme.of(context).colorScheme.primary;
-    
+
     return ListenableBuilder(
       listenable: viewModel,
       builder: (context, _) {
         if (!viewModel.isCalcolandoRotta) return const SizedBox.shrink();
-        
+
         return Container(
           color: Colors.white.withValues(alpha: 0.7),
           child: Center(
@@ -291,12 +345,18 @@ class LoadingOverlayWidget extends StatelessWidget {
               children: [
                 CircularProgressIndicator(color: cyanPrimary),
                 const SizedBox(height: 16),
-                Text("Calcolo del percorso...", style: TextStyle(color: cyanPrimary, fontWeight: FontWeight.bold)),
+                Text(
+                  "Calcolo del percorso...",
+                  style: TextStyle(
+                    color: cyanPrimary,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
               ],
             ),
           ),
         );
-      }
+      },
     );
   }
 }
@@ -307,7 +367,13 @@ class HandleAreaWidget extends StatelessWidget {
   final VoidCallback onToggle;
   final Function(DragEndDetails) onDragEnd;
 
-  const HandleAreaWidget({super.key, required this.viewModel, required this.isEspanso, required this.onToggle, required this.onDragEnd});
+  const HandleAreaWidget({
+    super.key,
+    required this.viewModel,
+    required this.isEspanso,
+    required this.onToggle,
+    required this.onDragEnd,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -321,25 +387,37 @@ class HandleAreaWidget extends StatelessWidget {
           children: [
             const SizedBox(height: 12),
             Container(
-              width: 50, height: 5,
-              decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(5)),
+              width: 50,
+              height: 5,
+              decoration: BoxDecoration(
+                color: Colors.grey[300],
+                borderRadius: BorderRadius.circular(5),
+              ),
             ),
             Padding(
               padding: const EdgeInsets.fromLTRB(24, 16, 24, 10),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  // Solo il testo ascolta il ViewModel per il conteggio!
+                  // il testo ascolta il viewmodel per aggiornare il numero di pin inseriti
                   ListenableBuilder(
                     listenable: viewModel,
                     builder: (context, _) {
                       return Text(
                         "PUNTI INSERITI (${viewModel.pinSelezionati.length})",
-                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.black54),
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12,
+                          color: Colors.black54,
+                        ),
                       );
-                    }
+                    },
                   ),
-                  Icon(isEspanso ? Icons.expand_more : Icons.expand_less, color: Colors.black38, size: 24),
+                  Icon(
+                    isEspanso ? Icons.expand_more : Icons.expand_less,
+                    color: Colors.black38,
+                    size: 24,
+                  ),
                 ],
               ),
             ),
@@ -350,20 +428,45 @@ class HandleAreaWidget extends StatelessWidget {
   }
 }
 
-class SearchBarWidget extends StatelessWidget {
+class SearchBarWidget extends StatefulWidget {
   final Function(String) onSearch;
   const SearchBarWidget({super.key, required this.onSearch});
 
   @override
+  State<SearchBarWidget> createState() => _SearchBarWidgetState();
+}
+
+class _SearchBarWidgetState extends State<SearchBarWidget> {
+  final TextEditingController _searchController = TextEditingController();
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  void _submitSearch(String value) {
+    if (value.trim().isEmpty) return;
+
+    widget.onSearch(value); // Invia la query al ViewModel
+    setState(() {
+      _searchController.clear();
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
-    // Non richiede ascolto del ViewModel
     final cyanPrimary = Theme.of(context).colorScheme.primary;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
       child: Container(
-        decoration: BoxDecoration(color: const Color(0xFFF0F3F6), borderRadius: BorderRadius.circular(20)),
+        decoration: BoxDecoration(
+          color: const Color(0xFFF0F3F6),
+          borderRadius: BorderRadius.circular(20),
+        ),
         child: TextField(
-          onSubmitted: onSearch,
+          controller: _searchController,
+          onSubmitted: _submitSearch,
           decoration: InputDecoration(
             hintText: "Cerca un luogo da aggiungere...",
             hintStyle: const TextStyle(fontSize: 14, color: Colors.black38),
@@ -396,14 +499,22 @@ class PinListWidget extends StatelessWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.add_location_alt_outlined, size: 50, color: cyanPrimary.withValues(alpha: 0.3)),
+                  Icon(
+                    Icons.add_location_alt_outlined,
+                    size: 50,
+                    color: cyanPrimary.withValues(alpha: 0.3),
+                  ),
                   const SizedBox(height: 16),
-                  const Text("Nessun punto inserito.", style: TextStyle(color: Colors.black38)),
+                  const Text(
+                    "Nessun punto inserito.",
+                    style: TextStyle(color: Colors.black38),
+                  ),
                   const Padding(
                     padding: EdgeInsets.symmetric(horizontal: 20),
                     child: Text(
                       "Tieni premuto sulla mappa per aggiungere un punto.",
-                      style: TextStyle(fontSize: 12, color: Colors.black54), textAlign: TextAlign.center,
+                      style: TextStyle(fontSize: 12, color: Colors.black54),
+                      textAlign: TextAlign.center,
                     ),
                   ),
                 ],
@@ -422,35 +533,94 @@ class PinListWidget extends StatelessWidget {
             final isUltimo = index == viewModel.pinSelezionati.length - 1;
 
             return Card(
-              key: ValueKey(pin.id), elevation: 0, color: Colors.transparent, margin: const EdgeInsets.symmetric(vertical: 4),
+              key: ValueKey(pin.id),
+              elevation: 0,
+              color: Colors.transparent,
+              margin: const EdgeInsets.symmetric(vertical: 4),
               child: ListTile(
                 contentPadding: const EdgeInsets.symmetric(horizontal: 10),
-                leading: CircleAvatar(backgroundColor: const Color(0xFFC7EBEB), child: Text("${index + 1}", style: TextStyle(color: cyanPrimary, fontWeight: FontWeight.bold))),
-                title: Text(viewModel.getTitoloPin(index), style: GoogleFonts.notoSerif(fontWeight: FontWeight.bold, fontSize: 14, color: cyanPrimary)),
+                leading: CircleAvatar(
+                  backgroundColor: const Color(0xFFC7EBEB),
+                  child: Text(
+                    "${index + 1}",
+                    style: TextStyle(
+                      color: cyanPrimary,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                title: Text(
+                  viewModel.getTitoloPin(index),
+                  style: GoogleFonts.notoSerif(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                    color: cyanPrimary,
+                  ),
+                ),
                 subtitle: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(pin.nome, style: const TextStyle(fontSize: 11), maxLines: 1, overflow: TextOverflow.ellipsis),
+                    Text(
+                      pin.nome,
+                      style: const TextStyle(fontSize: 11),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                     if (!isUltimo) ...[
                       const SizedBox(height: 8),
                       InkWell(
                         onTap: () => viewModel.cambiaTipoRouting(index),
                         child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
                           decoration: BoxDecoration(
-                            color: pin.tipoRottaVersoProssimo == TipoRouting.automatico ? cyanPrimary.withValues(alpha: 0.1) : Colors.grey.shade200,
+                            color:
+                                pin.tipoRottaVersoProssimo ==
+                                    TipoRouting.automatico
+                                ? cyanPrimary.withValues(alpha: 0.1)
+                                : Colors.grey.shade200,
                             borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: pin.tipoRottaVersoProssimo == TipoRouting.automatico ? cyanPrimary : Colors.grey.shade400, width: 1),
+                            border: Border.all(
+                              color:
+                                  pin.tipoRottaVersoProssimo ==
+                                      TipoRouting.automatico
+                                  ? cyanPrimary
+                                  : Colors.grey.shade400,
+                              width: 1,
+                            ),
                           ),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Icon(pin.tipoRottaVersoProssimo == TipoRouting.automatico ? Icons.auto_awesome : Icons.straighten, size: 14,
-                                color: pin.tipoRottaVersoProssimo == TipoRouting.automatico ? cyanPrimary : Colors.grey.shade700,
+                              Icon(
+                                pin.tipoRottaVersoProssimo ==
+                                        TipoRouting.automatico
+                                    ? Icons.auto_awesome
+                                    : Icons.straighten,
+                                size: 14,
+                                color:
+                                    pin.tipoRottaVersoProssimo ==
+                                        TipoRouting.automatico
+                                    ? cyanPrimary
+                                    : Colors.grey.shade700,
                               ),
                               const SizedBox(width: 4),
-                              Text(pin.tipoRottaVersoProssimo == TipoRouting.automatico ? "AI Routing" : "Linea d'aria",
-                                style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: pin.tipoRottaVersoProssimo == TipoRouting.automatico ? cyanPrimary : Colors.grey.shade700),
+                              Text(
+                                pin.tipoRottaVersoProssimo ==
+                                        TipoRouting.automatico
+                                    ? "AI Routing"
+                                    : "Linea d'aria",
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                  color:
+                                      pin.tipoRottaVersoProssimo ==
+                                          TipoRouting.automatico
+                                      ? cyanPrimary
+                                      : Colors.grey.shade700,
+                                ),
                               ),
                             ],
                           ),
@@ -462,15 +632,28 @@ class PinListWidget extends StatelessWidget {
                 trailing: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    IconButton(icon: const Icon(Icons.delete_outline, color: Colors.redAccent, size: 20), onPressed: () => viewModel.rimuoviPin(index)),
-                    ReorderableDragStartListener(index: index, child: const Icon(Icons.drag_handle, color: Colors.black26)),
+                    IconButton(
+                      icon: const Icon(
+                        Icons.delete_outline,
+                        color: Colors.redAccent,
+                        size: 20,
+                      ),
+                      onPressed: () => viewModel.rimuoviPin(index),
+                    ),
+                    ReorderableDragStartListener(
+                      index: index,
+                      child: const Icon(
+                        Icons.drag_handle,
+                        color: Colors.black26,
+                      ),
+                    ),
                   ],
                 ),
               ),
             );
           },
         );
-      }
+      },
     );
   }
 }
@@ -487,28 +670,47 @@ class ActionButtonsWidget extends StatelessWidget {
       listenable: viewModel,
       builder: (context, _) {
         bool canAction = viewModel.pinSelezionati.length >= 2;
-        
+
         return Container(
           width: double.infinity,
           padding: const EdgeInsets.fromLTRB(20, 10, 20, 30),
-          decoration: const BoxDecoration(color: Colors.white, border: Border(top: BorderSide(color: Color(0xFFEEEEEE)))),
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            border: Border(top: BorderSide(color: Color(0xFFEEEEEE))),
+          ),
           child: Row(
             children: [
               Expanded(
                 child: SizedBox(
                   height: 55,
                   child: ElevatedButton.icon(
-                    onPressed: canAction ? () {
-                      showModalBottomSheet(
-                        context: context, isScrollControlled: true, backgroundColor: Colors.transparent,
-                        builder: (ctx) => SalvaPercorsoModal(viewModel: viewModel),
-                      );
-                    } : null,
-                    icon: Icon(Icons.save_outlined, color: canAction ? Colors.black87 : Colors.black38),
-                    label: const Text("Salva", style: TextStyle(color: Colors.black87, fontWeight: FontWeight.bold)),
+                    onPressed: canAction
+                        ? () {
+                            showModalBottomSheet(
+                              context: context,
+                              isScrollControlled: true,
+                              backgroundColor: Colors.transparent,
+                              builder: (ctx) =>
+                                  SalvaPercorsoModal(viewModel: viewModel),
+                            );
+                          }
+                        : null,
+                    icon: Icon(
+                      Icons.save_outlined,
+                      color: canAction ? Colors.black87 : Colors.black38,
+                    ),
+                    label: const Text(
+                      "Salva",
+                      style: TextStyle(
+                        color: Colors.black87,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFE5E9D6), disabledBackgroundColor: const Color(0xFFEEEEEE),
-                      shape: const StadiumBorder(), elevation: 0,
+                      backgroundColor: const Color(0xFFE5E9D6),
+                      disabledBackgroundColor: const Color(0xFFEEEEEE),
+                      shape: const StadiumBorder(),
+                      elevation: 0,
                     ),
                   ),
                 ),
@@ -518,15 +720,34 @@ class ActionButtonsWidget extends StatelessWidget {
                 child: SizedBox(
                   height: 55,
                   child: ElevatedButton.icon(
-                    onPressed: canAction ? () {
-                      final userProvider = Provider.of<UserProvider>(context, listen: false);
-                      viewModel.avviaSubito(context, userProvider.utente!.uid);
-                    } : null,
-                    icon: Icon(Icons.play_arrow, color: canAction ? Colors.white : Colors.black38),
-                    label: const Text("Avvia", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                    onPressed: canAction
+                        ? () {
+                            final userProvider = Provider.of<UserProvider>(
+                              context,
+                              listen: false,
+                            );
+                            viewModel.avviaSubito(
+                              context,
+                              userProvider.utente!.uid,
+                            );
+                          }
+                        : null,
+                    icon: Icon(
+                      Icons.play_arrow,
+                      color: canAction ? Colors.white : Colors.black38,
+                    ),
+                    label: const Text(
+                      "Avvia",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: cyanPrimary, disabledBackgroundColor: const Color(0xFFEEEEEE),
-                      shape: const StadiumBorder(), elevation: 0,
+                      backgroundColor: cyanPrimary,
+                      disabledBackgroundColor: const Color(0xFFEEEEEE),
+                      shape: const StadiumBorder(),
+                      elevation: 0,
                     ),
                   ),
                 ),
@@ -534,7 +755,7 @@ class ActionButtonsWidget extends StatelessWidget {
             ],
           ),
         );
-      }
+      },
     );
   }
 }

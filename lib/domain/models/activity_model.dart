@@ -1,15 +1,15 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class ActivityModel {
-  final String? id; // ID Firestore
+  final String? id; // id Firestore
   final String userId; // utente che ha compiuto l'attività
-  final double km; // Distanza totale percorsa
+  final double km; // dist totale percorsa
   final DateTime data;
-  final Duration durata; // Durata totale dell'attività
-  final List<GeoPoint> percorso; // La lista di punti GPS
-  final String? meteo; // Opzionale: Condizioni meteo
+  final Duration durata; // durata totale dell'attività
+  final List<GeoPoint> percorso; // lista di punti GPS
+  final String? meteo; //Condizioni meteo
   final String?
-  percorsoOrigineId; // Opzionale: ID del percorso di origine se è stato creato da un percorso predefinito
+  percorsoOrigineId; //id del percorso di origine se è stato creato da un percorso predefinito
 
   final String? umoreFineAttivita;
   final bool? percorsoHaRilassato;
@@ -20,7 +20,7 @@ class ActivityModel {
     required this.userId,
     required this.km,
     required this.data,
-    required this.durata, //la durata totale è nota al momento dell'invocazione di questo cotruttore (cioè al termine dell'attività)
+    required this.durata, 
     required this.percorso,
     this.meteo,
     this.percorsoOrigineId,
