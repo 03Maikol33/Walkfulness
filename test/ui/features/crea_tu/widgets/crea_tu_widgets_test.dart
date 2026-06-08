@@ -179,7 +179,7 @@ void main() {
       expect(find.text("Avvia"), findsOneWidget);
     });
 
-    // --- test 6:verifica se la mappa viene renderizzata
+    // test 6:verifica se la mappa viene renderizzata
     testWidgets('MapLayerWidget renderizza la mappa senza errori', (
       WidgetTester tester,
     ) async {

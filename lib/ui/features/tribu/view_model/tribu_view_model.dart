@@ -62,7 +62,7 @@ class TribuViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  // --- AZIONI ---
+  // AZIONI
   Future<void> partecipa(String id) async {
     if (currentUserId != null) {
       await _repository.partecipaIniziativa(id, currentUserId!);

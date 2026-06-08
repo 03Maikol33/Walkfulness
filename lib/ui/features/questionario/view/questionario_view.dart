@@ -104,9 +104,7 @@ class _QuestionarioViewState extends State<QuestionarioView> {
   }
 }
 
-// ============================================================================
-// WIDGET ESTRATTI E OTTIMIZZATI CON ASCOLTO GRANULARE E CONSTANTS
-// ============================================================================
+// Widget componenti ui
 
 class QuestionarioHeaderWidget extends StatelessWidget {
   const QuestionarioHeaderWidget({super.key});

@@ -116,7 +116,7 @@ void main() {
       expect(find.byType(CondivisioneDialog), findsOneWidget);
     });
 
-    // --- NUOVO TEST 4: LISTA POPOLATA ---
+    //test 4
     testWidgets(
       'StoricoListWidget formatta la data e renderizza gli elementi della lista',
       (WidgetTester tester) async {

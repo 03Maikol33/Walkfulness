@@ -176,9 +176,7 @@ class _AttivitaViewState extends State<AttivitaView> {
                       mapController: _mapController,
                     ),
                     const SizedBox(height: 10),
-                    LandmarkCardWidget(
-                      viewModel: _viewModel,
-                    ), // Ora appare e scompare!
+                    LandmarkCardWidget(viewModel: _viewModel),
                     const SizedBox(height: 10),
                     PlayerCardWidget(viewModel: _viewModel),
                     const SizedBox(height: 10),
